@@ -1,0 +1,352 @@
+# Purchase Invoice (Bill) Module — Full Implementation Prompt
+
+## Context & Background
+
+I am building an accounting software using **Next.js (frontend)** and **PHP/Laravel (backend)**. I already have a Sales Invoice module implemented. Now I need a **Purchase Invoice (Bill) module** that mirrors the sales module in structure but follows purchase-side accounting logic.
+
+The product UOM system, `product_uoms` table, `units_of_measure` table, `company_settings` table, and `inventory_ledger` table already exist from the sales module. **Do not recreate them — reuse them.**
+
+---
+
+## 1. Multi-Unit of Measure (Multi-UOM) — Same as Sales
+
+Purchase follows the exact same Multi-UOM logic as sales:
+
+- Every product has a **base unit** (conversion_factor = 1) — stock always stored in base unit
+- At purchase entry time, user selects two UOMs independently:
+  1. **Purchase UOM** — the unit in which quantity is being received (e.g., "I received 5 Dozen")
+  2. **Price UOM** — the unit whose rate is used for pricing (e.g., "but the supplier quoted per Piece")
+
+### Calculation logic:
+```
+qty_in_base          = quantity × purchase_uom.conversion_factor
+price_per_base_unit  = price_uom_rate ÷ price_uom.conversion_factor
+unit_price_original  = price_per_base_unit × purchase_uom.conversion_factor
+line_gross_amount    = quantity × unit_price_original
+```
+
+### UOM auto-selection behavior (same as sales):
+- When product is selected → both Purchase UOM and Price UOM auto-set to product's `is_default_sale_uom = true` UOM
+- When Purchase UOM changes → Price UOM mirrors it automatically
+- User can then manually override Price UOM independently
+
+---
+
+## 2. Discount System (3 levels — Purchase side accounting)
+
+### Level 1: Trade Discount (per line item)
+- Percentage (%) on gross amount
+- **Never recorded in books** — only reduces the purchase price
+- Net unit price = unit_price_original × (1 - trade_discount_pct / 100)
+- Store `trade_discount_pct` and `trade_discount_amt` for reporting only
+- **Does NOT enter Inventory cost** — Inventory is debited at net price after trade discount
+
+### Level 2: Line Item Discount (per line item)
+- Applied after trade discount, on net line amount
+- Can be entered as percentage (%) or fixed amount (৳) — toggle between both
+- **Reduces the inventory cost** — Inventory is debited at amount after this discount too
+- Formula: `line_subtotal = line_net_amount - line_discount_amt`
+- VAT (Input VAT) is calculated on `line_subtotal`
+
+### Level 3: Bill Level Discount (on total bill)
+- Applied on grand total after all line totals
+- Accounting treatment:
+  ```
+  Dr. Accounts Payable             [amount]
+      Cr. Purchase Discount A/C    [amount]  ← Contra Expense account
+  ```
+- Does NOT reduce Inventory cost — Inventory cost is already locked at line level
+- Does NOT affect VAT — VAT is locked at line level
+
+---
+
+## 3. VAT & AIT — Purchase Side (Bangladesh context)
+
+### Company Setting: VAT Registration Status
+There must be a company setting: `is_vat_registered` (boolean).
+This controls how Input VAT is treated:
+
+#### If company IS VAT registered:
+- Input VAT is a **recoverable asset** — recorded separately
+- Inventory is debited at **net amount excluding VAT**
+- Accounting entry per line item:
+  ```
+  Dr. Inventory / Stock A/C        [line_subtotal excluding VAT]
+  Dr. Input VAT Receivable         [vat_amount]
+      Cr. Accounts Payable             [line_subtotal + vat_amount]
+  ```
+- Input VAT Receivable is later offset against Output VAT Payable (from sales)
+
+#### If company is NOT VAT registered:
+- Input VAT becomes **part of the inventory cost**
+- Accounting entry per line item:
+  ```
+  Dr. Inventory / Stock A/C        [line_subtotal including VAT]
+      Cr. Accounts Payable             [line_subtotal + vat_amount]
+  ```
+- Weighted Average Cost is calculated including VAT in this case
+
+### VAT modes per bill:
+- **VAT Exclusive**: VAT added on top of line_subtotal → `vat_amount = line_subtotal × vat_rate`
+- **VAT Inclusive**: VAT already in price → `vat_amount = line_subtotal × vat_rate ÷ (1 + vat_rate)`
+- Mode selectable per bill (same as sales)
+- Each line item uses its own VAT rate from product settings
+
+### AIT (Advance Income Tax) — Purchase Side:
+- AIT on purchase = amount **deducted from supplier payment** and deposited to NBR
+- AIT is a **liability** (AIT Payable to NBR) — not an asset
+- Accounting entry:
+  ```
+  Dr. Inventory / Stock A/C        [line_subtotal]
+      Cr. Accounts Payable             [line_subtotal - ait_amount]
+      Cr. AIT Payable (NBR)            [ait_amount]
+  ```
+- AIT rate per line item — auto-filled from product settings, editable
+
+### Weighted Average Cost — how VAT affects it:
+```
+If VAT registered:
+  net_unit_cost = line_subtotal_ex_vat ÷ qty_in_base_uom
+
+If NOT VAT registered:
+  net_unit_cost = (line_subtotal + vat_amount) ÷ qty_in_base_uom
+```
+
+---
+
+## 4. Weighted Average Cost Update — Real-time on Purchase Save
+
+Every time a purchase bill is saved, update `weighted_avg_cost` immediately:
+
+```
+new_avg_cost =
+  (current_stock_in_base_uom × current_weighted_avg_cost) + (new_qty_in_base × new_net_unit_cost)
+  ─────────────────────────────────────────────────────────────────────────────────────────────────
+                    current_stock_in_base_uom + new_qty_in_base_uom
+```
+
+Where `new_net_unit_cost`:
+- If VAT registered: cost excluding VAT, after all discounts
+- If NOT VAT registered: cost including VAT, after all discounts
+- Always in base unit terms
+
+After update:
+- `products.weighted_avg_cost` = new_avg_cost
+- `products.current_stock_in_base_uom` += new_qty_in_base_uom
+- Insert row into `inventory_ledger`
+
+---
+
+## 5. Accounting Journal Entries — Auto-generated on Bill Save
+
+### A. Purchase entries per line item (if VAT registered):
+```
+Dr. Inventory / Stock A/C        [line_subtotal excluding VAT]
+Dr. Input VAT Receivable         [vat_amount]
+    Cr. Accounts Payable             [line_subtotal + vat_amount - ait_amount]
+    Cr. AIT Payable (NBR)            [ait_amount]  ← only if AIT applicable
+```
+
+### A. Purchase entries per line item (if NOT VAT registered):
+```
+Dr. Inventory / Stock A/C        [line_subtotal + vat_amount]
+    Cr. Accounts Payable             [line_subtotal + vat_amount - ait_amount]
+    Cr. AIT Payable (NBR)            [ait_amount]  ← only if AIT applicable
+```
+
+### B. Bill level discount entry (if applicable):
+```
+Dr. Accounts Payable             [bill_discount_amt]
+    Cr. Purchase Discount A/C    [bill_discount_amt]
+```
+
+### C. Inventory ledger entry (perpetual system):
+```
+qty_in               = new_qty_in_base_uom
+unit_cost            = new_net_unit_cost (at time of purchase)
+total_cost           = qty_in × unit_cost
+new_weighted_avg_cost = calculated above
+reference_type       = 'purchase'
+```
+
+---
+
+## 6. Database Schema
+
+### `suppliers` (new table)
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint PK | |
+| name | string | required |
+| phone | string | |
+| address | text | |
+| opening_balance | decimal(15,4) | default 0 |
+| created_at | timestamp | |
+
+### `purchase_bills` (new table)
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint PK | |
+| bill_no | string unique | auto-generated |
+| supplier_id | FK → suppliers | |
+| bill_date | date | |
+| supplier_ref_no | string | supplier's own invoice number |
+| subtotal | decimal(15,4) | sum of line subtotals |
+| trade_discount_amt | decimal(15,4) | total trade discount — record only |
+| line_discount_amt | decimal(15,4) | total line discounts |
+| taxable_amount | decimal(15,4) | subtotal after line discounts |
+| vat_amount | decimal(15,4) | total input VAT |
+| ait_amount | decimal(15,4) | total AIT payable |
+| bill_discount_amt | decimal(15,4) | bill level discount |
+| bill_discount_account_id | FK → chart_of_accounts | |
+| grand_total | decimal(15,4) | final payable to supplier |
+| vat_mode | enum | 'exclusive', 'inclusive' |
+| payment_status | enum | 'unpaid', 'partial', 'paid' |
+| notes | text | |
+| created_at | timestamp | |
+
+### `purchase_items` (new table)
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint PK | |
+| bill_id | FK → purchase_bills | |
+| product_id | FK → products | |
+| purchase_uom_id | FK → product_uoms | unit quantity is entered in |
+| price_uom_id | FK → product_uoms | unit whose rate is used |
+| quantity_in_purchase_uom | decimal(15,4) | user-entered qty |
+| quantity_in_base_uom | decimal(15,4) | converted to base unit |
+| unit_price_original | decimal(15,4) | price before any discount |
+| trade_discount_pct | decimal(5,2) | |
+| trade_discount_amt | decimal(15,4) | record only — not booked |
+| net_unit_price | decimal(15,4) | after trade discount |
+| line_gross_amount | decimal(15,4) | qty × net_unit_price |
+| line_discount_pct | decimal(5,2) | |
+| line_discount_amt | decimal(15,4) | |
+| line_subtotal | decimal(15,4) | after line discount |
+| vat_rate | decimal(5,2) | snapshot at time of purchase |
+| vat_amount | decimal(15,4) | |
+| vat_inclusive | boolean | snapshot of bill's vat_mode |
+| ait_rate | decimal(5,2) | |
+| ait_amount | decimal(15,4) | |
+| net_unit_cost | decimal(15,4) | actual cost used for WAC update |
+| weighted_avg_cost_before | decimal(15,4) | WAC before this purchase |
+| weighted_avg_cost_after | decimal(15,4) | WAC after this purchase |
+| created_at | timestamp | |
+
+### `company_settings` — add these keys (if not already present):
+| Key | Default Value | Description |
+|-----|--------------|-------------|
+| `is_vat_registered` | `true` | Controls Input VAT treatment |
+| `purchase_show_price_uom` | `true` | Column visibility |
+| `purchase_show_trade_discount` | `true` | Column visibility |
+| `purchase_show_line_discount` | `true` | Column visibility |
+| `purchase_show_vat` | `true` | Column visibility |
+| `purchase_show_ait` | `true` | Column visibility |
+
+---
+
+## 7. Frontend Requirements (Next.js)
+
+### Bill header section:
+- Supplier selector (searchable dropdown)
+- Bill date
+- Bill number (auto-generated, editable)
+- Supplier Reference Number (supplier's own invoice no — optional)
+- VAT mode toggle: Exclusive / Inclusive
+
+### Line items table — each row contains:
+- Product selector (searchable dropdown)
+- Purchase UOM selector (from product's UOMs)
+- Price UOM selector (from product's UOMs — mirrors Purchase UOM by default, overridable)
+- Quantity input
+- Unit Price (auto-filled from Price UOM's default purchase price, editable)
+- Trade Discount % (optional, column can be hidden via settings)
+- Net Unit Price (auto-calculated, read-only)
+- Line Discount % or ৳ (toggle, column can be hidden via settings)
+- Line Subtotal (auto-calculated, read-only)
+- VAT Rate (auto-filled from product, editable, column can be hidden via settings)
+- VAT Amount (auto-calculated, read-only)
+- AIT Rate (auto-filled from product, editable, column can be hidden via settings)
+- AIT Amount (auto-calculated, read-only)
+- Net Unit Cost (shown for reference — what will be used for WAC update, read-only)
+- Delete row button
+
+### Bill summary section:
+- Subtotal
+- Total Trade Discount (display only)
+- Total Line Discount
+- Taxable Amount
+- Total Input VAT
+- Total AIT Payable
+- Bill Discount (amount input + account selector)
+- Grand Total (payable to supplier)
+
+### Column visibility:
+- Fetch from `GET /api/settings/purchase-form-config` on page load
+- Same system as sales — company-wide settings from `company_settings` table
+- Controlled under: **Company Settings > Purchase Configuration > Purchase Form Columns**
+
+### All calculations must happen in real-time on the frontend — only final save triggers API call.
+
+---
+
+## 8. Backend Requirements (Laravel PHP)
+
+### API Endpoints:
+- `POST /api/purchases/bills` — create new bill
+- `GET /api/purchases/bills/{id}` — get bill details
+- `PUT /api/purchases/bills/{id}` — update bill (only if payment_status = 'unpaid')
+- `GET /api/settings/purchase-form-config` — get column visibility settings
+
+### On `POST /api/purchases/bills`, the controller must:
+1. Validate all inputs
+2. Begin database transaction
+3. Save `purchase_bills` record
+4. For each line item:
+   - Calculate `quantity_in_base_uom = qty × purchase_uom.conversion_factor`
+   - Calculate `net_unit_cost` based on VAT registration status
+   - Calculate new `weighted_avg_cost`:
+     ```
+     new_avg = (old_stock × old_avg_cost + new_qty_base × net_unit_cost)
+               ÷ (old_stock + new_qty_base)
+     ```
+   - Save `purchase_items` record with `weighted_avg_cost_before` and `weighted_avg_cost_after`
+   - Update `products.weighted_avg_cost` = new_avg_cost
+   - Update `products.current_stock_in_base_uom` += qty_in_base
+   - Insert row into `inventory_ledger` with reference_type = 'purchase'
+5. Generate and save all `journal_entries`
+6. If bill_discount_amt > 0, save bill discount journal entry
+7. Commit transaction — if anything fails, rollback everything
+
+### Create a `PurchaseBillService` class for all business logic (separate from controller).
+
+---
+
+## 9. Important Business Rules
+
+- Trade discount is **never posted to any account** on purchase side — it only reduces purchase price
+- Line discount **reduces inventory cost** — Inventory is debited at net amount after line discount
+- Bill level discount goes to **Purchase Discount (Contra Expense)** account — does not change inventory cost
+- If company is VAT registered: **Input VAT is excluded from inventory cost** and recorded as asset
+- If company is NOT VAT registered: **VAT is included in inventory cost**
+- AIT on purchase is always a **liability** (AIT Payable to NBR) — never an asset on purchase side
+- Weighted Average Cost update uses **net cost excluding VAT** if VAT registered, **including VAT** if not
+- WAC snapshot (`weighted_avg_cost_before` and `weighted_avg_cost_after`) must be stored per line item for audit trail
+- Bill level discount does **not** affect VAT — VAT already locked at line level
+- A bill can only be edited if `payment_status = 'unpaid'`
+- If a bill is deleted or reversed, **stock must be deducted** and **WAC must be recalculated**
+
+---
+
+## 10. What I need from you:
+
+1. Laravel migrations for `suppliers`, `purchase_bills`, `purchase_items` tables
+2. Laravel models with all relationships
+3. `PurchaseBillController` with store, show, update methods
+4. `PurchaseBillService` class handling all WAC update logic, journal entry generation, and inventory ledger updates
+5. The Next.js purchase bill form component with all real-time calculations
+6. A custom React hook `usePurchaseCalculations` that handles all the math
+7. Settings page section for Purchase Form Column visibility under Company Settings
+
+
+Work in a expert & efficient way so that database does not get slower. 

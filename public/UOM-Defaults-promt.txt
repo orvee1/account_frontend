@@ -1,0 +1,55 @@
+Product Creation — Default Unit of Measure Behavior
+Feature Description
+When a user opens the Product Creation page, the Unit of Measure (UOM) section must already have one default row pre-filled — the user should not need to add the first UOM manually.
+
+Default UOM Row Behavior
+On page load (Create mode):
+The UOM table must automatically show one pre-filled row:
+FieldDefault ValueEditable?UOM NamePiece✅ Yes — user can rename it (e.g., "Kg", "Liter", "Box")Symbolpcs✅ YesConversion Factor1❌ No — always locked at 1 (this is the base unit)Is Base Unittrue❌ No — always locked (cannot be changed or deleted)Is Default Sale UOMtrue✅ Yes — user can move default to another UOM laterSale Priceempty✅ Yes
+Rules for this default row:
+
+The delete button must be disabled for this row — the base unit row can never be removed
+The conversion factor field must be read-only and always show 1 for this row
+The "Is Base Unit" indicator must be visible but not editable
+The user can rename "Piece" to anything they want (e.g., if the product is rice, they may rename it to "Kg")
+If the user renames it, the new name is saved as the base unit name — no validation restriction on the name
+
+
+Adding More UOM Rows
+When the user clicks "Add UOM", a new empty row appears with:
+FieldDefault ValueEditable?UOM Nameempty✅ Yes — requiredSymbolempty✅ YesConversion Factorempty✅ Yes — required, must be > 1Is Base Unitfalse❌ LockedIs Default Sale UOMfalse✅ Yes — radio button, only one can be trueSale Priceempty✅ Yes
+Conversion Factor input rule:
+
+Must be a positive number greater than 0
+For non-base UOMs, it should logically be greater than 1 (but do not enforce this as a hard rule — some products may have UOMs smaller than base)
+Show a helper text: "How many [base unit name] make 1 of this unit? e.g., 1 Dozen = 12 Pieces"
+
+
+Is Default Sale UOM — Radio Button Behavior
+
+Only one UOM per product can be the default sale UOM
+Use a radio button (not checkbox) in each row for this field
+The base unit row (Piece) starts as selected by default
+When user selects a different row's radio button, the previous one deselects automatically
+This selected UOM will be auto-filled in the sales form when this product is chosen
+
+
+Edit Mode Behavior
+When opening an existing product for editing:
+
+Load all saved UOMs from the database
+The base unit row (conversion_factor = 1) must still have its delete button disabled and conversion factor locked
+All other rows are fully editable
+The currently saved is_default_sale_uom = true row must have its radio button pre-selected
+
+
+Database Notes
+In the product_uoms table, the base unit row for every product must have:
+conversion_factor    = 1
+is_base_uom          = true
+On the backend, before saving, validate that:
+
+Exactly one row has is_base_uom = true
+Exactly one row has is_default_sale_uom = true
+The row with is_base_uom = true must have conversion_factor = 1
+No duplicate UOM names within the same product

@@ -1,0 +1,31 @@
+​Role: You are a Senior Full-Stack Developer and Financial Systems Architect.
+
+Task: Build a Bank Reconciliation module for a custom accounting software.
+​
+Context:
+​Current State: The system has a Chart of Accounts where "Bank" is under "Current Assets". Ledgers are working correctly.
+​
+Objective: Add a "Reconcile" button in the Bank Ledger view that opens a reconciliation interface to match system records with the bank statement.
+​Requirements & Logic (Accounting Standards):
+​
+Inputs Needed: Statement Ending Date, Statement Ending Balance.
+​
+Calculations: * Book Balance: Current ledger balance in the system.
+​
+Adjusted Bank Balance: Statement Ending Balance + Deposits in Transit - Outstanding Checks.
+​The Goal: Adjusted Bank Balance must equal the Book Balance (Difference = 0).
+​Functionality: * List all "Unreconciled" transactions (Debits & Credits) for that specific bank account up to the statement date.
+​Ability to "Tick/Check" each transaction as it appears on the bank statement.
+​Real-time calculation of "Cleared Balance" and "Difference".
+​Technical Specifications (Full-Stack):
+​Database Schema: Suggest updates to the transactions table (e.g., is_reconciled (boolean), reconciled_date, bank_statement_id). Create a bank_reconciliations table to store history (statement date, ending balance, status).
+​Backend (API):
+​GET /bank/unreconciled-transactions: Fetch transactions not yet reconciled.
+​POST /bank/reconcile: Bulk update transaction statuses and save reconciliation summary.
+​Frontend (UI/UX):
+​A split-view or modal interface showing the Summary (Left/Top) and Transaction List (Right/Bottom).
+​Summary side should show: Statement Balance, Total Cleared, and the "Difference" indicator.
+​A "Finalize Reconciliation" button that only activates when the difference is zero.
+​Output Structure:
+​Step-by-step logic flow.
+​Database Migration/Schema.
