@@ -288,7 +288,7 @@ export default function AssetDepreciation({ companyId }) {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && setAppliedSearchTerm(searchTerm)}
-                  className="w-full sm:w-64 md:w-80"
+                  className="mr-auto w-full sm:w-64 md:w-80"
                 />
                 <Button onClick={() => setAppliedSearchTerm(searchTerm)}>Search</Button>
                 <Dialog open={isAddEntryFormOpen} onOpenChange={setIsAddEntryFormOpen}>

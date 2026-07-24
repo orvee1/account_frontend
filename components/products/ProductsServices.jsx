@@ -167,11 +167,11 @@ export default function ProductsServices({ initialProducts = [] }) {
   }, [products, searchTerm, sortConfig]);
 
   return (
-    <div className={`p-4 ${isModalOpen ? "" : "space-y-6"}`}>
+    <div className={`p-4 md:p-6 ${isModalOpen ? "" : "space-y-6"}`}>
       <div className="flex justify-end">
         <div className="flex w-full flex-wrap items-center justify-end gap-2">
           <input
-            className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm sm:w-64 md:w-80"
+            className="mr-auto h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm sm:w-64 md:w-80"
             placeholder="Search products/services..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}

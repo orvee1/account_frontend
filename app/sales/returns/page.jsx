@@ -174,7 +174,7 @@ export default function SalesReturnsPage() {
   }
 
   return (
-    <div className="p-4 md:p-6 space-y-4">
+    <div className="p-4 md:p-6 space-y-6">
       <div className="flex justify-end">
         <div className="flex w-full flex-wrap items-center justify-end gap-2">
           <Input
@@ -182,7 +182,7 @@ export default function SalesReturnsPage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && setAppliedSearchTerm(searchTerm)}
-            className="w-full sm:w-64 md:w-80"
+            className="mr-auto w-full sm:w-64 md:w-80"
           />
           <Button onClick={() => setAppliedSearchTerm(searchTerm)}>Search</Button>
           <Button onClick={() => setIsModalOpen(true)}>New Return</Button>

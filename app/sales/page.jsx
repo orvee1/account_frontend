@@ -73,7 +73,7 @@ export default function SalesPage() {
             <div className="flex-1 flex flex-col bg-gray-50">
                 <div className="flex flex-1">
                     <main className="flex-1 overflow-auto">
-                        <div className="p-8">
+                        <div className="p-4 md:p-6">
                             <div className="mb-6 flex justify-end">
                                 <div className="flex w-full flex-wrap items-center justify-end gap-2">
                                     <input
@@ -82,7 +82,7 @@ export default function SalesPage() {
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && setAppliedSearchTerm(searchTerm)}
-                                        className="h-10 w-full rounded-md border border-gray-300 px-3 text-sm sm:w-64 md:w-80"
+                                        className="mr-auto h-10 w-full rounded-md border border-gray-300 px-3 text-sm sm:w-64 md:w-80"
                                     />
                                     <button
                                         type="button"

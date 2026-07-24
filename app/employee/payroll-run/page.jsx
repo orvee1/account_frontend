@@ -201,7 +201,7 @@ export default function PayrollRunPage() {
     const draftCount = filteredRuns.filter((run) => run.status === 'Draft').length;
 
     if (loading || isLoading) {
-        return <div className="p-8">Loading...</div>;
+        return <div className="p-4 md:p-6">Loading...</div>;
     }
 
     return (
@@ -209,7 +209,7 @@ export default function PayrollRunPage() {
             <div className="flex-1 flex flex-col bg-gray-50">
                 <div className="flex flex-1">
                     <main className="flex-1 overflow-auto">
-                        <div className="p-8">
+                        <div className="p-4 md:p-6">
                             {/* Header */}
                             <div className="flex justify-between items-start mb-8">
                                 <div>
@@ -251,7 +251,7 @@ export default function PayrollRunPage() {
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && setAppliedSearchTerm(searchTerm)}
-                                        className="h-10 w-full rounded-md border border-gray-300 px-3 text-sm sm:w-64 md:w-80"
+                                        className="mr-auto h-10 w-full rounded-md border border-gray-300 px-3 text-sm sm:w-64 md:w-80"
                                     />
                                     <button
                                         type="button"

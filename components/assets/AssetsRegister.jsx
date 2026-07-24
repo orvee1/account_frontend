@@ -192,7 +192,7 @@ export default function AssetsRegister({ companyId, initialAssets = [], autoLoad
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && reload()}
-            className="w-full sm:w-72 md:w-80"
+            className="mr-auto w-full sm:w-72 md:w-80"
           />
           <Button className="h-10" onClick={reload}>
             <Search className="mr-2 h-4 w-4" /> Search

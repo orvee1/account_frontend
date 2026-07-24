@@ -66,11 +66,11 @@ export default function InvoicesPage() {
     };
 
     if (isLoading && invoices.length === 0) {
-        return <div className="p-8 text-center">Loading invoices...</div>;
+        return <div className="p-4 md:p-6 text-center">Loading invoices...</div>;
     }
 
     return (
-        <div className="p-8 space-y-6">
+        <div className="p-4 md:p-6 space-y-6">
             {/* Filters */}
             <div className="flex justify-end mb-6">
                 <div className="flex w-full flex-wrap items-center justify-end gap-2">
@@ -82,7 +82,7 @@ export default function InvoicesPage() {
                             setSearchTerm(e.target.value);
                             setCurrentPage(1);
                         }}
-                        className="h-10 w-full rounded-lg border border-gray-300 px-4 py-2 sm:w-64 md:w-80"
+                        className="mr-auto h-10 w-full rounded-lg border border-gray-300 px-4 py-2 sm:w-64 md:w-80"
                     />
                     <select
                         value={statusFilter}

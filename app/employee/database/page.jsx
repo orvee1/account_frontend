@@ -180,7 +180,7 @@ export default function EmployeeDatabasePage() {
         );
 
     if (loading || isLoading) {
-        return <div className="p-8">Loading...</div>;
+        return <div className="p-4 md:p-6">Loading...</div>;
     }
 
     return (
@@ -188,7 +188,7 @@ export default function EmployeeDatabasePage() {
             <div className="flex-1 flex flex-col bg-gray-50">
                 <div className="flex flex-1">
                     <main className="flex-1 overflow-auto">
-                        <div className="p-8">
+                        <div className="p-4 md:p-6">
                             {/* Header */}
                             <div className="mb-6">
                                 <div>
@@ -219,7 +219,7 @@ export default function EmployeeDatabasePage() {
                             {/* Filters */}
                             <div className="flex justify-end mb-6">
                                 <div className="flex w-full flex-wrap items-center justify-end gap-2">
-                                    <div className="w-full sm:w-64 md:w-80">
+                                    <div className="mr-auto w-full sm:w-64 md:w-80">
                                         <input
                                             type="text"
                                             placeholder="Search by ID, name, or email..."

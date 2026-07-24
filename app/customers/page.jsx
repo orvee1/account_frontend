@@ -207,7 +207,7 @@ export default function CustomersPage() {
               <Input
                 type="text"
                 placeholder="Search customers (Name, Balance...)"
-                className="h-10 w-full sm:w-64 md:w-80"
+                className="mr-auto h-10 w-full sm:w-64 md:w-80"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
