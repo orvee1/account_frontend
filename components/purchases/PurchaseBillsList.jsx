@@ -135,13 +135,13 @@ export default function PurchaseBillsList({ initialBills = [] }) {
   };
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-4 md:p-6 space-y-6">
       <div className="flex justify-end">
         <div className="flex w-full flex-wrap items-center justify-end gap-2">
           <Input
             type="text"
             placeholder="Search bills (Bill No, Vendor, Notes...)"
-            className="h-10 w-full sm:w-64 md:w-80"
+            className="mr-auto h-10 w-full sm:w-64 md:w-80"
             value={searchTerm}
             onChange={handleSearchChange}
           />

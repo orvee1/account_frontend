@@ -199,12 +199,10 @@ import {
   getCOATemplate 
 } from "@/services/chartAccounts";
 import { FileUp, FileDown, GitMerge, FileText, Search, X } from "lucide-react";
-import { useTopbar } from "@/contexts/TopbarContext";
 
 export default function ChartOfAccountsFullPage({ companyId: propCompanyId, initialChartData }) {
   const router = useRouter();
   const { user } = useAuth();
-  const { setRightContent, clearRightContent } = useTopbar();
   const isFirstLoad = useRef(true);
   const [chartData, setChartData] = useState([]);
   const [companyId, setCompanyId] = useState(propCompanyId || null);
@@ -228,36 +226,6 @@ export default function ChartOfAccountsFullPage({ companyId: propCompanyId, init
 
   // File Import Ref
   const fileInputRef = useRef(null);
-
-  useEffect(() => {
-    return () => clearRightContent();
-  }, [clearRightContent]);
-
-  useEffect(() => {
-    setRightContent(
-      <div className="relative w-full">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
-        <input
-          type="search"
-          aria-label="Search chart of accounts"
-          placeholder="Search accounts..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="h-10 w-full rounded-md border border-gray-200 bg-gray-50 pl-9 pr-9 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:bg-gray-800"
-        />
-        {search && (
-          <button
-            type="button"
-            aria-label="Clear account search"
-            onClick={() => setSearch("")}
-            className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded text-gray-400 transition hover:bg-gray-200 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-100"
-          >
-            <X size={14} />
-          </button>
-        )}
-      </div>
-    );
-  }, [search, setRightContent]);
 
   // Flat list for select inputs
   const flatAccounts = useMemo(() => {
@@ -471,8 +439,29 @@ export default function ChartOfAccountsFullPage({ companyId: propCompanyId, init
   return (
     <main className="w-full h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
       {/* Header */}
-      <header className="flex justify-end items-center bg-gray-100 dark:bg-gray-800 px-6 py-3 border-b dark:border-gray-700 shadow-sm">
-        <div className="flex items-center text-sm font-medium space-x-3">
+      <header className="flex flex-col gap-3 bg-gray-100 dark:bg-gray-800 px-6 py-3 border-b dark:border-gray-700 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative w-full sm:max-w-xs lg:max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+          <input
+            type="search"
+            aria-label="Search chart of accounts"
+            placeholder="Search accounts..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-10 w-full rounded-md border border-gray-200 bg-white pl-9 pr-9 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+          />
+          {search && (
+            <button
+              type="button"
+              aria-label="Clear account search"
+              onClick={() => setSearch("")}
+              className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded text-gray-400 transition hover:bg-gray-200 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-100"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center justify-end gap-2 text-sm font-medium">
           <button
             className="flex items-center gap-1 hover:text-blue-600 transition border rounded px-2 py-1 bg-white dark:bg-gray-700"
             onClick={handleUseTemplate}

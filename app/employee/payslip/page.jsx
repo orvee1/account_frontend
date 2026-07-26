@@ -292,7 +292,7 @@ export default function PayslipPage() {
     const uniqueMonths = [...new Set(payslips.map((p) => p.month))];
 
     if (loading || isLoading) {
-        return <div className="p-8">Loading...</div>;
+        return <div className="p-4 md:p-6">Loading...</div>;
     }
 
     return (
@@ -300,7 +300,7 @@ export default function PayslipPage() {
             <div className="flex-1 flex flex-col bg-gray-50">
                 <div className="flex flex-1">
                     <main className="flex-1 overflow-auto">
-                        <div className="p-8">
+                        <div className="p-4 md:p-6">
                             {/* Header */}
                             <div className="flex justify-between items-start mb-8">
                                 <div>

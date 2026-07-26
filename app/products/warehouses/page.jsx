@@ -121,15 +121,15 @@ export default function WarehousesPage() {
   };
 
   return (
-    <div className="p-4">
-      <div className="flex justify-end mb-4">
-        <div className="flex flex-wrap items-center justify-end gap-2">
+    <div className="p-4 md:p-6">
+      <div className="flex justify-end mb-6">
+        <div className="flex w-full flex-wrap items-center justify-end gap-2">
           <Input
             placeholder="Search by name..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && fetchData(1)}
-            className="w-64"
+            className="mr-auto w-64"
           />
           <Button onClick={() => fetchData(1)}>Search</Button>
 

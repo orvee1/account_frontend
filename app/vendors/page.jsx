@@ -39,7 +39,7 @@ export default function VendorsPage() {
 
   if (loading) {
     return (
-      <div className="p-4 md:p-6">
+      <div className="p-1">
         <div className="space-y-3">
           <Skeleton className="h-8 w-[240px]" />
           <Skeleton className="h-[400px] w-full" />
@@ -49,7 +49,7 @@ export default function VendorsPage() {
   }
 
   return (
-    <div className="p-4 md:p-6">
+    <div className="p-1">
       {loadError ? (
         <p className="mt-4 text-sm text-red-500">{loadError}</p>
       ) : (

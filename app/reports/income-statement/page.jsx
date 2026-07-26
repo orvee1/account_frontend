@@ -86,11 +86,11 @@ export default function IncomeStatementPage() {
     };
 
     if (loading || isLoading) {
-        return <div className="p-8">Loading...</div>;
+        return <div className="p-4 md:p-6">Loading...</div>;
     }
 
     if (!reportData) {
-        return <div className="p-8">No data available</div>;
+        return <div className="p-4 md:p-6">No data available</div>;
     }
 
     return (
@@ -98,7 +98,7 @@ export default function IncomeStatementPage() {
             <div className="flex-1 flex flex-col bg-gray-50">
                 <div className="flex flex-1">
                     <main className="flex-1 overflow-auto">
-                        <div className="p-8">
+                        <div className="p-4 md:p-6">
                             {/* Date Range Filter */}
                             <div className="bg-white rounded-lg shadow p-6 mb-6">
                                 <div className="flex flex-wrap items-end justify-end gap-4">
