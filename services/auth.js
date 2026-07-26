@@ -29,11 +29,11 @@ export async function requestToLogin(loginData) {
   const cookieStore = await cookies();
 
   try {
-    // ✅ login এ publicRequestOptions — token ছাড়া request
     const options = publicRequestOptions();
+    const apiBaseUrl = (process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
 
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/login`,
+      `${apiBaseUrl}/api/login`,
       {
         ...options,
         method: "POST",

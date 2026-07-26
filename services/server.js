@@ -6,6 +6,15 @@ const proxy_base_url = "/api/backend";
 
 const server = {};
 
+function normalizeApiPath(url) {
+  if (!url) return url;
+  if (url.startsWith("/api") || url.startsWith("/sanctum")) {
+    return url;
+  }
+
+  return `/api${url.startsWith("/") ? url : `/${url}`}`;
+}
+
 // Client-side requests go through the same-origin proxy. Auth stays in httpOnly cookies.
 export function clientAuthRequestOptions({ headers } = { headers: {} }) {
   const authHeaders = new Headers();
@@ -116,7 +125,8 @@ function requestUrl(url, queryString = "") {
     throw new Error("API base URL is not configured.");
   }
 
-  return `${base.replace(/\/$/, "")}${url}${queryString}`;
+  const normalizedUrl = normalizeApiPath(url);
+  return `${base.replace(/\/$/, "")}${normalizedUrl}${queryString}`;
 }
 
 methods.map(function (requestMethod) {
