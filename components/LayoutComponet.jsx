@@ -25,11 +25,11 @@ const LayoutComponet = ({ children }) => {
   ]);
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 print:block print:h-auto print:bg-white print:text-gray-900">
       <Sidebar {...{ sidebarOpen, toggleSidebar, closeSidebar }} />
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden print:block print:overflow-visible">
         <Header {...{ toggleSidebar, currentPageName }} />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto p-6 bg-gray-50 dark:bg-gray-900">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto p-6 bg-gray-50 dark:bg-gray-900 print:block print:overflow-visible print:bg-white print:p-0">
           <AnimatePresence mode="wait">
             <motion.div
               key={pathname}

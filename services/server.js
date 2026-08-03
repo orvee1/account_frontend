@@ -6,13 +6,21 @@ const proxy_base_url = "/api/backend";
 
 const server = {};
 
+function normalizeApiBaseUrl(baseUrl) {
+  if (!baseUrl) return baseUrl;
+
+  return baseUrl.replace(/\/+$/, "").replace(/\/api$/i, "");
+}
+
 function normalizeApiPath(url) {
   if (!url) return url;
-  if (url.startsWith("/api") || url.startsWith("/sanctum")) {
-    return url;
+  const normalizedUrl = url.startsWith("/") ? url : `/${url}`;
+
+  if (normalizedUrl.startsWith("/api") || normalizedUrl.startsWith("/sanctum")) {
+    return normalizedUrl;
   }
 
-  return `/api${url.startsWith("/") ? url : `/${url}`}`;
+  return `/api${normalizedUrl}`;
 }
 
 // Client-side requests go through the same-origin proxy. Auth stays in httpOnly cookies.
@@ -125,8 +133,12 @@ function requestUrl(url, queryString = "") {
     throw new Error("API base URL is not configured.");
   }
 
+  const normalizedBase =
+    typeof window === "undefined"
+      ? normalizeApiBaseUrl(base)
+      : base.replace(/\/+$/, "");
   const normalizedUrl = normalizeApiPath(url);
-  return `${base.replace(/\/$/, "")}${normalizedUrl}${queryString}`;
+  return `${normalizedBase}${normalizedUrl}${queryString}`;
 }
 
 methods.map(function (requestMethod) {
@@ -202,4 +214,11 @@ async function responseData(response) {
   };
 }
 
-export { api_base_url, proxy_base_url, formattedResponse, responseData, server };
+export {
+  api_base_url,
+  proxy_base_url,
+  formattedResponse,
+  normalizeApiBaseUrl,
+  responseData,
+  server,
+};

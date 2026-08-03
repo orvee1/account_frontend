@@ -130,7 +130,7 @@ const Sidebar = ({
     <motion.div
       animate={{ x: sidebarOpen ? 0 : "-100%" }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className={`${ sidebarOpen ? "md:static w-64 overflow-hidden" : ""} fixed inset-y-0 left-0 z-30 w-64 bg-white dark:bg-gray-800 shadow-xl 
+      className={`${ sidebarOpen ? "md:static w-64 overflow-hidden" : ""} fixed inset-y-0 left-0 z-30 w-64 bg-white dark:bg-gray-800 shadow-xl print:hidden
                              md:translate-x-0 md:shadow-lg border-r border-gray-200 dark:border-gray-700`}
     >
       <div className="flex flex-col h-full">

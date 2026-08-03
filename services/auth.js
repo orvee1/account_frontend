@@ -13,6 +13,12 @@ import { cookies } from "next/headers";
 const getBearerTokenKey = () => "__BearerLoginToken";
 const getCompanyIdKey = () => "__CompanyId";
 
+function normalizeApiBaseUrl(baseUrl) {
+  if (!baseUrl) return baseUrl;
+
+  return baseUrl.replace(/\/+$/, "").replace(/\/api$/i, "");
+}
+
 export async function getBearerToken() {
   const cookieStore = await cookies();
   const token = cookieStore.get(getBearerTokenKey());
@@ -30,7 +36,9 @@ export async function requestToLogin(loginData) {
 
   try {
     const options = publicRequestOptions();
-    const apiBaseUrl = (process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
+    const apiBaseUrl = normalizeApiBaseUrl(
+      process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"
+    );
 
     const response = await fetch(
       `${apiBaseUrl}/api/login`,

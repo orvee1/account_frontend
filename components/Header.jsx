@@ -10,7 +10,7 @@ const Header = ({ toggleSidebar, currentPageName }) => {
   const { rightContent } = useTopbar();
 
   return (
-    <header className="min-h-20 bg-white dark:bg-gray-800 shadow-md flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 border-b border-gray-200 dark:border-gray-700">
+    <header className="min-h-20 bg-white dark:bg-gray-800 shadow-md flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 border-b border-gray-200 dark:border-gray-700 print:hidden">
       <div className="flex min-w-0 flex-1 items-center">
         <Button
           variant="ghost"

@@ -3,6 +3,26 @@ import { cookies } from "next/headers";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 const TOKEN_COOKIE = "__BearerLoginToken";
 
+function normalizeApiBaseUrl(baseUrl) {
+  if (!baseUrl) return baseUrl;
+
+  return baseUrl.replace(/\/+$/, "").replace(/\/api$/i, "");
+}
+
+function normalizeProxyPath(path) {
+  const normalizedPath = String(path || "").replace(/^\/+/, "");
+
+  if (
+    normalizedPath.startsWith("api/") ||
+    normalizedPath === "api" ||
+    normalizedPath.startsWith("sanctum/")
+  ) {
+    return normalizedPath;
+  }
+
+  return `api/${normalizedPath}`;
+}
+
 async function handler(request, { params }) {
   if (!API_BASE_URL) {
     return Response.json({ message: "API base URL is not configured." }, { status: 500 });
@@ -11,7 +31,7 @@ async function handler(request, { params }) {
   const cookieStore = await cookies();
   const token = cookieStore.get(TOKEN_COOKIE)?.value;
   const path = Array.isArray(params.path) ? params.path.join("/") : "";
-  const url = new URL(`${API_BASE_URL.replace(/\/$/, "")}/${path}`);
+  const url = new URL(`${normalizeApiBaseUrl(API_BASE_URL)}/${normalizeProxyPath(path)}`);
 
   const requestUrl = new URL(request.url);
   requestUrl.searchParams.forEach((value, key) => {
