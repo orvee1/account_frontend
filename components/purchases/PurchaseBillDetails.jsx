@@ -180,9 +180,9 @@ export default function PurchaseBillDetails({ bill }) {
                     {/* Line Items Table */}
                     <div className="space-y-3">
                         <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Bill Items</h3>
-                        <div className="overflow-x-auto border rounded-lg">
+                        <div className="overflow-x-auto border rounded-lg max-h-[65vh] overflow-y-auto">
                             <table className="w-full text-sm">
-                                <thead className="bg-muted/50 border-b">
+                                <thead className="sticky top-0 z-20 bg-muted border-b border-slate-200">
                                     <tr>
                                         <th className="px-4 py-3 text-left">Product</th>
                                         <th className="px-4 py-3 text-right">Qty</th>

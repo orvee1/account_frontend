@@ -105,9 +105,9 @@ export default function BrandsPage() {
         </div>
       </div>
 
-      <div className="overflow-auto border rounded">
+      <div className="overflow-x-auto border rounded max-h-[65vh] overflow-y-auto">
         <table className="w-full min-w-[700px] text-sm text-left">
-          <thead className="text-xs uppercase bg-muted/50">
+          <thead className="sticky top-0 z-20 text-xs uppercase bg-muted border-b border-slate-200">
             <tr>
               <SortableHeader columnKey="id" sortConfig={sortConfig} requestSort={requestSort} className="w-20">ID</SortableHeader>
               <SortableHeader columnKey="name" sortConfig={sortConfig} requestSort={requestSort} className="min-w-[250px]">Name</SortableHeader>

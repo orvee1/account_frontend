@@ -191,9 +191,9 @@ export default function SalesReturnsPage() {
 
       {loadError && <p className="text-sm text-red-600">{loadError}</p>}
 
-      <div className="overflow-x-auto border rounded-lg">
+      <div className="overflow-x-auto border rounded-lg max-h-[65vh] overflow-y-auto">
         <table className="w-full min-w-[900px] text-sm text-left">
-          <thead className="text-xs uppercase bg-muted/50">
+          <thead className="sticky top-0 z-20 text-xs uppercase bg-muted border-b border-slate-200">
             <tr>
               <th className="px-4 py-3">Return No</th>
               <th className="px-4 py-3">Customer</th>

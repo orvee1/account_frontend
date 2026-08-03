@@ -20,9 +20,9 @@ export default function AccountTable({
   searchTerm,
 }) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-border dark:border-dark-border shadow-md">
+    <div className="overflow-x-auto rounded-lg border border-border dark:border-dark-border shadow-md max-h-[65vh] overflow-y-auto">
       <table className="w-full min-w-[800px] text-sm text-left text-foreground dark:text-dark-foreground">
-        <thead className="text-xs text-primary dark:text-dark-primary uppercase bg-muted/50 dark:bg-dark-muted/50">
+        <thead className="sticky top-0 z-20 text-xs text-primary dark:text-dark-primary uppercase bg-muted dark:bg-dark-muted border-b border-slate-200 dark:border-slate-700">
           <tr>
             <SortableHeader columnKey="sl"          sortConfig={sortConfig} requestSort={requestSort} className="w-16">Sl</SortableHeader>
             <SortableHeader columnKey="account_no"  sortConfig={sortConfig} requestSort={requestSort}>Acc. No.</SortableHeader>

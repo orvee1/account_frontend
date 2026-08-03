@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { X, CalendarRange } from "lucide-react";
 import { getAccountLedger } from "@/services/chartAccounts";
 import { useAuth } from "@/contexts/AuthContext";
@@ -38,9 +37,6 @@ export default function CustomerDetailsModal({ isOpen, onClose, customer }) {
         try {
             setLoading(true);
 
-            // Try to get customer's account from chart of accounts
-            // For now, we'll use customer_id as account_id placeholder
-            // In a real scenario, customers should have linked accounts in the database
             const response = await getAccountLedger(companyId, customer.id, {
                 start_date: startDate,
                 end_date: endDate,
@@ -81,155 +77,164 @@ export default function CustomerDetailsModal({ isOpen, onClose, customer }) {
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[900px] bg-card dark:bg-dark-card text-foreground dark:text-dark-foreground border-border dark:border-dark-border max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
+            <DialogContent className="sm:max-w-[1000px] bg-card dark:bg-dark-card text-foreground dark:text-dark-foreground border-border dark:border-dark-border max-h-[90vh] overflow-y-auto p-4 md:p-5">
+                {/* Header: Title + Contact/Address */}
+                <DialogHeader className="p-0 border-b border-border dark:border-dark-border pb-3">
                     <div className="flex items-center justify-between">
-                        <div>
-                            <DialogTitle className="text-2xl font-bold text-primary dark:text-dark-primary">
-                                {customer?.name}
-                            </DialogTitle>
-                            <DialogDescription className="text-muted-foreground dark:text-dark-muted-foreground mt-1">
-                                Customer Account & Transaction Details
-                            </DialogDescription>
-                        </div>
-                        <button
-                            onClick={onClose}
-                            className="text-muted-foreground hover:text-foreground"
-                        >
-                            <X size={24} />
-                        </button>
+                        <DialogTitle className="text-lg font-bold text-primary dark:text-dark-primary flex items-center gap-2">
+                            Customer Statement: {customer?.name}
+                        </DialogTitle>
                     </div>
+                    {/* Simple Contact/Address Info */}
+                    <div className="text-xs text-muted-foreground dark:text-dark-muted-foreground mt-2">
+                        <span className="font-semibold text-foreground dark:text-dark-foreground">Phone:</span> {customer?.phoneNumber || "N/A"}
+                        <span className="mx-2">|</span>
+                        <span className="font-semibold text-foreground dark:text-dark-foreground">Email:</span> {customer?.email || "N/A"}
+                        <span className="mx-2">|</span>
+                        <span className="font-semibold text-foreground dark:text-dark-foreground">Address:</span> {customer?.address || "N/A"}
+                    </div>
+                    <DialogDescription className="sr-only">
+                        Customer Account & Transaction Details
+                    </DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-6">
-                    {/* Customer Info */}
-                    <Card className="bg-muted/30 dark:bg-dark-muted/30 border-border dark:border-dark-border">
-                        <CardContent className="pt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div>
-                                <p className="text-xs text-muted-foreground dark:text-dark-muted-foreground uppercase">Display Name</p>
-                                <p className="font-semibold">{customer?.displayName || customer?.name}</p>
-                            </div>
-                            <div>
-                                <p className="text-xs text-muted-foreground dark:text-dark-muted-foreground uppercase">Phone</p>
-                                <p className="font-semibold">{customer?.phoneNumber || "N/A"}</p>
-                            </div>
-                            <div>
-                                <p className="text-xs text-muted-foreground dark:text-dark-muted-foreground uppercase">Email</p>
-                                <p className="font-semibold text-sm">{customer?.email || "N/A"}</p>
-                            </div>
-                            <div>
-                                <p className="text-xs text-muted-foreground dark:text-dark-muted-foreground uppercase">Address</p>
-                                <p className="font-semibold text-sm">{customer?.address || "N/A"}</p>
-                            </div>
-                        </CardContent>
-                    </Card>
+                <div className="space-y-3 mt-3">
+                    {/* 3rd Row: Customer No. (left side), Date Range (right side) */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-muted/10 dark:bg-dark-muted/10 p-2 rounded-md border border-border dark:border-dark-border text-xs">
+                        {/* Left Side: Customer No. */}
+                        <div className="flex items-center gap-2">
+                            <span className="font-semibold text-muted-foreground dark:text-dark-muted-foreground uppercase">Customer No:</span>
+                            <span className="font-mono bg-muted/60 dark:bg-dark-muted/60 px-2 py-0.5 rounded text-foreground dark:text-dark-foreground font-bold">
+                                {customer?.customerNumber || customer?.customer_no || customer?.code || `CUST-${customer?.id}`}
+                            </span>
+                        </div>
 
-                    {/* Date Range Filter */}
-                    <div className="flex flex-wrap gap-3 items-end bg-muted/20 dark:bg-dark-muted/20 p-4 rounded-lg border border-border dark:border-dark-border">
-                        <div className="flex-1 min-w-[150px]">
-                            <label className="text-xs text-muted-foreground dark:text-dark-muted-foreground uppercase font-semibold">
-                                From Date
-                            </label>
-                            <input
-                                type="date"
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                                className="w-full px-3 py-2 border border-input dark:border-dark-input rounded-md bg-background dark:bg-dark-background text-foreground dark:text-dark-foreground mt-1"
-                            />
+                        {/* Right Side: Date Range */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-muted-foreground dark:text-dark-muted-foreground uppercase font-semibold">From:</span>
+                                <input
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    className="px-2 py-1 border border-input dark:border-dark-input rounded bg-background dark:bg-dark-background text-foreground dark:text-dark-foreground font-medium text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                                />
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-muted-foreground dark:text-dark-muted-foreground uppercase font-semibold">To:</span>
+                                <input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className="px-2 py-1 border border-input dark:border-dark-input rounded bg-background dark:bg-dark-background text-foreground dark:text-dark-foreground font-medium text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                                />
+                            </div>
+                            <Button
+                                onClick={loadLedgerData}
+                                disabled={loading}
+                                size="sm"
+                                className="h-7 px-2.5 bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold flex items-center gap-1"
+                            >
+                                <CalendarRange size={13} /> Load
+                            </Button>
                         </div>
-                        <div className="flex-1 min-w-[150px]">
-                            <label className="text-xs text-muted-foreground dark:text-dark-muted-foreground uppercase font-semibold">
-                                To Date
-                            </label>
-                            <input
-                                type="date"
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                                className="w-full px-3 py-2 border border-input dark:border-dark-input rounded-md bg-background dark:bg-dark-background text-foreground dark:text-dark-foreground mt-1"
-                            />
-                        </div>
-                        <Button
-                            onClick={loadLedgerData}
-                            disabled={loading}
-                            className="bg-primary text-primary-foreground hover:bg-primary/90"
-                        >
-                            <CalendarRange size={18} className="mr-2" /> Load
-                        </Button>
                     </div>
 
-                    {/* Balance Summary */}
+                    {/* 4th Row: Balance Summary (Optional, rendered when data exists) */}
                     {ledgerData && (
-                        <Card className="bg-primary/5 dark:bg-dark-primary/5 border-primary/20 dark:border-dark-primary/20">
-                            <CardContent className="pt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 py-1.5 px-3 bg-primary/5 dark:bg-dark-primary/5 border border-primary/20 dark:border-dark-primary/20 rounded-md text-xs">
+                            <div className="flex items-center gap-4 flex-wrap">
                                 <div>
-                                    <p className="text-xs text-muted-foreground dark:text-dark-muted-foreground uppercase">Opening Balance</p>
-                                    <p className="text-lg font-bold text-primary dark:text-dark-primary">
+                                    <span className="text-muted-foreground dark:text-dark-muted-foreground uppercase font-semibold mr-1">Opening:</span>
+                                    <span className="font-bold text-primary dark:text-dark-primary">
                                         {(ledgerData.balances?.opening_balance || 0).toFixed(2)}
-                                    </p>
+                                    </span>
                                 </div>
+                                <div className="h-3 w-px bg-primary/20 dark:bg-dark-primary/20 hidden sm:block"></div>
                                 <div>
-                                    <p className="text-xs text-muted-foreground dark:text-dark-muted-foreground uppercase">Total Debit</p>
-                                    <p className="text-lg font-bold text-destructive">
+                                    <span className="text-muted-foreground dark:text-dark-muted-foreground uppercase font-semibold mr-1">Total Debit:</span>
+                                    <span className="font-bold text-destructive">
                                         {(ledgerData.balances?.total_debit || 0).toFixed(2)}
-                                    </p>
+                                    </span>
                                 </div>
+                                <div className="h-3 w-px bg-primary/20 dark:bg-dark-primary/20 hidden sm:block"></div>
                                 <div>
-                                    <p className="text-xs text-muted-foreground dark:text-dark-muted-foreground uppercase">Total Credit</p>
-                                    <p className="text-lg font-bold text-green-600">
+                                    <span className="text-muted-foreground dark:text-dark-muted-foreground uppercase font-semibold mr-1">Total Credit:</span>
+                                    <span className="font-bold text-green-600">
                                         {(ledgerData.balances?.total_credit || 0).toFixed(2)}
-                                    </p>
+                                    </span>
                                 </div>
+                                <div className="h-3 w-px bg-primary/20 dark:bg-dark-primary/20 hidden sm:block"></div>
                                 <div>
-                                    <p className="text-xs text-muted-foreground dark:text-dark-muted-foreground uppercase">Closing Balance</p>
-                                    <p className="text-lg font-bold text-accent dark:text-dark-accent">
+                                    <span className="text-muted-foreground dark:text-dark-muted-foreground uppercase font-semibold mr-1">Closing:</span>
+                                    <span className="font-bold text-accent dark:text-dark-accent">
                                         {(ledgerData.balances?.closing_balance || 0).toFixed(2)}
-                                    </p>
+                                    </span>
                                 </div>
-                            </CardContent>
-                        </Card>
+                            </div>
+                            <div className="font-semibold text-muted-foreground dark:text-dark-muted-foreground">
+                                Count: <span className="text-foreground dark:text-dark-foreground font-bold">{ledgerData?.transactions?.length || 0}</span>
+                            </div>
+                        </div>
                     )}
 
-                    {/* Transactions Table */}
-                    <div>
-                        <h3 className="text-lg font-semibold mb-3 text-foreground dark:text-dark-foreground">
-                            Transactions ({ledgerData?.transactions?.length || 0})
-                        </h3>
+                    {/* 5th Row: Transactions Table */}
+                    <div className="mt-2">
                         {loading ? (
-                            <div className="text-center py-8 text-muted-foreground dark:text-dark-muted-foreground">
+                            <div className="text-center py-8 text-muted-foreground dark:text-dark-muted-foreground text-xs">
                                 Loading transactions...
                             </div>
                         ) : ledgerData?.transactions && ledgerData.transactions.length > 0 ? (
-                            <div className="overflow-x-auto rounded-lg border border-border dark:border-dark-border">
-                                <table className="w-full min-w-[800px] text-sm text-left text-foreground dark:text-dark-foreground">
-                                    <thead className="text-xs text-primary dark:text-dark-primary uppercase bg-muted/50 dark:bg-dark-muted/50">
+                            <div className="overflow-x-auto rounded-lg border border-border dark:border-dark-border max-h-[45vh] overflow-y-auto">
+                                <table className="w-full min-w-[800px] text-xs text-left text-foreground dark:text-dark-foreground border-collapse">
+                                    <thead className="sticky top-0 text-primary dark:text-dark-primary uppercase bg-muted dark:bg-dark-muted font-bold border-b border-border dark:border-dark-border">
                                         <tr>
-                                            <th className="px-4 py-3">Date</th>
-                                            <th className="px-4 py-3">Description</th>
-                                            <th className="px-4 py-3 text-right">Debit</th>
-                                            <th className="px-4 py-3 text-right">Credit</th>
-                                            <th className="px-4 py-3 text-right">Balance</th>
-                                            <th className="px-4 py-3">Reference</th>
+                                            <th className="px-3 py-2 text-center w-12">SL</th>
+                                            <th className="px-3 py-2 w-24">Date</th>
+                                            <th className="px-3 py-2">Particular</th>
+                                            <th className="px-3 py-2">Voucher Type</th>
+                                            <th className="px-3 py-2 text-right w-28">Debit</th>
+                                            <th className="px-3 py-2 text-right w-28">Credit</th>
+                                            <th className="px-3 py-2 text-right w-28">Balance</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    <tbody className="divide-y divide-border dark:divide-dark-border">
                                         {ledgerData.transactions.map((tx, idx) => (
                                             <tr
                                                 key={idx}
-                                                className="bg-card dark:bg-dark-card border-b border-border dark:border-dark-border last:border-b-0 hover:bg-muted/30 dark:hover:bg-dark-muted/30 transition-colors"
+                                                className="bg-card dark:bg-dark-card hover:bg-muted/30 dark:hover:bg-dark-muted/30 transition-colors"
                                             >
-                                                <td className="px-4 py-3 font-medium">{tx.date}</td>
-                                                <td className="px-4 py-3">{tx.description}</td>
-                                                <td className="px-4 py-3 text-right font-semibold text-destructive">
+                                                <td className="px-3 py-1.5 text-center font-medium text-muted-foreground dark:text-dark-muted-foreground border-r border-border/50 dark:border-dark-border/50">
+                                                    {idx + 1}
+                                                </td>
+                                                <td className="px-3 py-1.5 font-medium whitespace-nowrap">
+                                                    {tx.date}
+                                                </td>
+                                                <td className="px-3 py-1.5 max-w-xs truncate" title={tx.description}>
+                                                    {tx.description}
+                                                </td>
+                                                <td className="px-3 py-1.5 whitespace-nowrap">
+                                                    {tx.reference_type ? (
+                                                        <span className="inline-flex items-center gap-1 font-semibold text-muted-foreground dark:text-dark-muted-foreground">
+                                                            {tx.reference_type}
+                                                            {tx.reference_id && (
+                                                                <span className="font-mono text-[10px] bg-muted/80 dark:bg-dark-muted/80 px-1 py-0.5 rounded text-foreground dark:text-dark-foreground">
+                                                                    #{tx.reference_id}
+                                                                </span>
+                                                            )}
+                                                        </span>
+                                                    ) : (
+                                                        tx.voucher_type || "N/A"
+                                                    )}
+                                                </td>
+                                                <td className="px-3 py-1.5 text-right font-semibold text-destructive">
                                                     {tx.debit && Number(tx.debit) > 0 ? Number(tx.debit).toFixed(2) : "-"}
                                                 </td>
-                                                <td className="px-4 py-3 text-right font-semibold text-green-600">
+                                                <td className="px-3 py-1.5 text-right font-semibold text-green-600">
                                                     {tx.credit && Number(tx.credit) > 0 ? Number(tx.credit).toFixed(2) : "-"}
                                                 </td>
-                                                <td className="px-4 py-3 text-right font-semibold text-accent dark:text-dark-accent">
+                                                <td className="px-3 py-1.5 text-right font-semibold text-accent dark:text-dark-accent">
                                                     {Number(tx.balance).toFixed(2)}
-                                                </td>
-                                                <td className="px-4 py-3 text-xs text-muted-foreground dark:text-dark-muted-foreground">
-                                                    {tx.reference_id || tx.reference_type || "N/A"}
                                                 </td>
                                             </tr>
                                         ))}
@@ -237,15 +242,15 @@ export default function CustomerDetailsModal({ isOpen, onClose, customer }) {
                                 </table>
                             </div>
                         ) : (
-                            <div className="text-center py-8 text-muted-foreground dark:text-dark-muted-foreground border border-border dark:border-dark-border rounded-lg">
+                            <div className="text-center py-8 text-muted-foreground dark:text-dark-muted-foreground border border-border dark:border-dark-border rounded-lg text-xs">
                                 No transactions found for the selected date range.
                             </div>
                         )}
                     </div>
                 </div>
 
-                <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-border dark:border-dark-border">
-                    <Button variant="outline" onClick={onClose}>
+                <div className="flex justify-end gap-2 mt-3 pt-3 border-t border-border dark:border-dark-border">
+                    <Button variant="outline" size="sm" onClick={onClose} className="h-8 text-xs px-4">
                         Close
                     </Button>
                 </div>

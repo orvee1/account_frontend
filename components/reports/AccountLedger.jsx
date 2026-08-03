@@ -141,14 +141,14 @@ const AccountLedger = ({ account, ledgerData, startDate, endDate, setStartDate, 
 
       {/* Reconcile Feature - handled by ReconcilePage component above */}
       <div
-        className="mt-2 overflow-x-auto rounded-lg border border-border dark:border-dark-border shadow-md"
-        style={{ minHeight: "70vh", maxHeight: "80vh", overflowY: "auto" }}
+        className="mt-2 overflow-x-auto rounded-lg border border-border dark:border-dark-border shadow-md max-h-[80vh] overflow-y-auto"
+        style={{ minHeight: "70vh" }}
       >
         <h3 className="text-xl font-semibold p-2 bg-card dark:bg-dark-card border-b border-border dark:border-dark-border">
           Transactions
         </h3>
         <table className="w-full min-w-[700px] text-sm text-left text-foreground dark:text-dark-foreground">
-          <thead className="text-xs text-primary dark:text-dark-primary uppercase bg-muted/50 dark:bg-dark-muted/50">
+          <thead className="sticky top-0 z-20 text-xs text-primary dark:text-dark-primary uppercase bg-muted dark:bg-dark-muted border-b border-slate-200 dark:border-slate-700">
             <tr>
               <th scope="col" className="px-2 py-1">
                 Date

@@ -118,7 +118,7 @@ export default function CustomersPage() {
       name: payload.name,
       displayName: payload.displayName || null,
       proprietorName: payload.proprietorName || null,
-      // customerNumber: ❌ (server-managed)
+      customerNumber: isEdit ? undefined : (payload.customerNumber || null),
       phoneNumber: payload.phoneNumber || null,
       email: payload.email || null,
       address: payload.address || null,
@@ -300,9 +300,9 @@ export default function CustomersPage() {
             </AlertDialogContent>
           </AlertDialog>
 
-          <div className="overflow-x-auto rounded-lg border border-border dark:border-dark-border shadow-md">
+          <div className="overflow-x-auto rounded-lg border border-border dark:border-dark-border shadow-md max-h-[65vh] overflow-y-auto">
             <table className="w-full min-w-[600px] text-sm text-left text-foreground dark:text-dark-foreground">
-              <thead className="text-xs text-primary dark:text-dark-primary uppercase bg-muted/50 dark:bg-dark-muted/50">
+              <thead className="sticky top-0 z-20 text-xs text-primary dark:text-dark-primary uppercase bg-muted dark:bg-dark-muted border-b border-slate-200 dark:border-slate-700">
                 <tr>
                   <SortableHeader columnKey="name" sortConfig={sortConfig} requestSort={requestSort} className="min-w-[150px]">Customer Name</SortableHeader>
                   <SortableHeader columnKey="displayName" sortConfig={sortConfig} requestSort={requestSort} className="min-w-[150px]">Display Name</SortableHeader>

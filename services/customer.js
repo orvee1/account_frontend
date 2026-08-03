@@ -42,6 +42,11 @@ export async function updateCustomer(id, payload) {
   return responseData(res);
 }
 
+export async function fetchCustomerCode() {
+  const res = await server.get('/customers/generate-code');
+  return responseData(res);
+}
+
 // সফট-ডিলিট
 export async function deleteCustomer(id) {
   const res = await server.delete(`/customers/${id}`);

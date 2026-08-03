@@ -227,9 +227,9 @@ export default function ProductsServices({ initialProducts = [] }) {
       )}
 
       {/* Table */}
-      <div className="overflow-x-auto border rounded-lg">
+      <div className="overflow-x-auto border rounded-lg max-h-[65vh] overflow-y-auto">
         <table className="w-full min-w-[900px] text-sm text-left">
-          <thead className="text-xs uppercase bg-muted/50">
+          <thead className="sticky top-0 z-20 text-xs uppercase bg-muted border-b border-slate-200">
             <tr>
               {[
                 ["sl", "Sl"],

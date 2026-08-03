@@ -18,8 +18,7 @@ const mapCommon = (p = {}) => ({
 // ✅ CREATE: everything + vendor_number + opening_balance
 const toServerCreatePayload = (p = {}) => ({
   ...mapCommon(p),
-  // NOTE: backend যদি customer_number চায়, এখানে key বদলাও
-  vendor_number: p.customerNumber || p.vendorNumber || null,
+  vendor_number: p.vendorCode || p.customerNumber || p.vendorNumber || null,
   opening_balance: Number(p.openingBalance || 0),
   opening_balance_type: p.openingBalanceType || null,
   opening_balance_date: p.openingBalanceDate || null,
@@ -57,6 +56,11 @@ export async function deleteVendor(id) {
 // লেজার (optional, but useful)
 export async function fetchVendorLedger(id, params = {}) {
   const res = await server.get(`/vendors/${id}/ledger`, { params });
+  return responseData(res);
+}
+
+export async function fetchVendorCode() {
+  const res = await server.get('/vendors/generate-code');
   return responseData(res);
 }
 
