@@ -29,8 +29,13 @@ const chartData = [
       {
         name: "Current Assets",
         children: [
-          { name: "Cash in Hand" },
-          { name: "Cash at Bank" },
+          {
+            name: "Cash & Cash Equivalent",
+            children: [
+              { name: "Cash in Hand" },
+              { name: "Cash at Bank" },
+            ],
+          },
           { name: "Accounts Receivable & Debtors" },
           { name: "Inventory" },
           { name: "Short-term Investments" },

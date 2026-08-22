@@ -1,10 +1,13 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import Papa from "papaparse";
+import * as XLSX from "xlsx";
 import { createProduct, updateProduct, deleteProduct } from "@/services/product";
 import AddProductForm from "./AddProductForm";
 import { FileDown, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import formatProductForDisplay from "./utilis/formatProductForDisplay";
 import SortableHeader from "@/components/SortableHeader";
 import { fetchWarehouses } from "@/services/warehouse";
@@ -33,6 +36,226 @@ export default function ProductsServices({ initialProducts = [] }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
 
+  const fileInputRef = useRef(null);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [importRows, setImportRows] = useState([]);
+  const [importErrors, setImportErrors] = useState([]);
+  const [importing, setImporting] = useState(false);
+  const [selectedFileName, setSelectedFileName] = useState("");
+  const [importSummary, setImportSummary] = useState(null);
+
+  const IMPORT_HEADERS = [
+    "Product Type",
+    "Name",
+    "SKU",
+    "Barcode",
+    "Description",
+    "Category",
+    "Brand",
+    "Costing Price",
+    "Sales Price",
+    "VAT Rate",
+    "VAT Inclusive",
+    "AIT Rate",
+    "Warehouse",
+    "Opening Quantity",
+    "Manufactured At",
+    "Expired At",
+    "Has Warranty",
+    "Warranty Days",
+    "Base UOM Name",
+    "Base UOM Symbol",
+    "Status",
+  ];
+
+  const parseBoolean = (value) => {
+    if (typeof value === "boolean") return value;
+    const normalized = String(value ?? "").trim().toLowerCase();
+    return ["1", "true", "yes", "y", "on"].includes(normalized);
+  };
+
+  const resolveLookupId = (items, value) => {
+    const raw = String(value ?? "").trim();
+    if (!raw) return null;
+    const numeric = Number(raw);
+    if (!Number.isNaN(numeric) && String(numeric) !== "NaN") {
+      const byId = items?.find((item) => String(item.id) === String(raw));
+      if (byId) return byId.id;
+    }
+    return items?.find((item) => String(item?.name ?? "").trim().toLowerCase() === raw.toLowerCase())?.id ?? null;
+  };
+
+  const makeImportPayload = (row) => {
+    const productType = String(row["Product Type"] ?? "Stock").trim() || "Stock";
+    const salesPrice = Number(row["Sales Price"] ?? 0);
+    const baseUomName = String(row["Base UOM Name"] ?? "").trim();
+    const baseUomSymbol = String(row["Base UOM Symbol"] ?? "").trim();
+    return {
+      product_type: productType,
+      name: String(row["Name"] ?? "").trim(),
+      sku: row["SKU"] ? String(row["SKU"]).trim() : null,
+      barcode: row["Barcode"] ? String(row["Barcode"]).trim() : null,
+      description: row["Description"] ? String(row["Description"]).trim() : null,
+      category_id: resolveLookupId(categories, row["Category"]),
+      brand_id: resolveLookupId(brands, row["Brand"]),
+      costing_price: Number(row["Costing Price"] ?? 0),
+      sales_price: salesPrice,
+      vat_rate: Number(row["VAT Rate"] ?? 0),
+      vat_inclusive: parseBoolean(row["VAT Inclusive"]) ? 1 : 0,
+      ait_rate: Number(row["AIT Rate"] ?? 0),
+      warehouse_id: resolveLookupId(warehouses, row["Warehouse"]),
+      opening_quantity: row["Opening Quantity"] ? Number(row["Opening Quantity"]) : null,
+      manufactured_at: row["Manufactured At"] ? String(row["Manufactured At"]).trim() : null,
+      expired_at: row["Expired At"] ? String(row["Expired At"]).trim() : null,
+      has_warranty: parseBoolean(row["Has Warranty"]) ? 1 : 0,
+      warranty_days: row["Warranty Days"] ? Number(row["Warranty Days"]) : null,
+      status: String(row["Status"] ?? "active").trim().toLowerCase() === "inactive" ? "inactive" : "active",
+      product_uoms: baseUomName ? [
+        {
+          uom_id: null,
+          name: baseUomName,
+          symbol: baseUomSymbol,
+          conversion_factor: 1,
+          sale_price: salesPrice,
+          is_base_uom: 1,
+          is_default_sale_uom: 1,
+        },
+      ] : [],
+    };
+  };
+
+  const downloadImportTemplate = () => {
+    const sampleRow = {
+      "Product Type": "Stock",
+      Name: "Example Product",
+      SKU: "EX123",
+      Barcode: "1234567890123",
+      Description: "Optional product description",
+      Category: "Default Category",
+      Brand: "Example Brand",
+      "Costing Price": 100,
+      "Sales Price": 125,
+      "VAT Rate": 15,
+      "VAT Inclusive": "No",
+      "AIT Rate": 0,
+      Warehouse: "Main Warehouse",
+      "Opening Quantity": 10,
+      "Manufactured At": "2026-01-01",
+      "Expired At": "2027-01-01",
+      "Has Warranty": "No",
+      "Warranty Days": "",
+      "Base UOM Name": "Piece",
+      "Base UOM Symbol": "pcs",
+      Status: "active",
+    };
+
+    const worksheet = XLSX.utils.json_to_sheet([sampleRow], { header: IMPORT_HEADERS });
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Products");
+    XLSX.writeFile(workbook, "product-import-template.xlsx");
+  };
+
+  const parseProductImportFile = async (file) => {
+    const extension = file.name.split(".").pop().toLowerCase();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.onload = (event) => {
+        try {
+          const content = event.target.result;
+
+          if (extension === "csv") {
+            const parsed = Papa.parse(content, {
+              header: true,
+              skipEmptyLines: true,
+              transformHeader: (header) => String(header ?? "").trim(),
+            });
+            resolve(parsed.data.filter((row) => Object.values(row).some((value) => value !== null && value !== "")));
+          } else if (extension === "xlsx" || extension === "xls") {
+            const workbook = XLSX.read(content, { type: "array" });
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+            const jsonData = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+            resolve(jsonData.filter((row) => Object.values(row).some((value) => value !== null && value !== "")));
+          } else {
+            reject(new Error("Unsupported file type"));
+          }
+        } catch (error) {
+          reject(error);
+        }
+      };
+
+      reader.onerror = () => reject(new Error("Failed to read file"));
+
+      if (extension === "csv") {
+        reader.readAsText(file);
+      } else {
+        reader.readAsArrayBuffer(file);
+      }
+    });
+  };
+
+  const handleProductImportFile = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    event.target.value = "";
+
+    setSelectedFileName(file.name);
+    setImportErrors([]);
+    setImportSummary(null);
+
+    try {
+      const rows = await parseProductImportFile(file);
+      if (!rows || rows.length === 0) {
+        setImportRows([]);
+        setImportErrors(["No product rows found in the selected file."]);
+      } else {
+        setImportRows(rows);
+      }
+      setIsImportDialogOpen(true);
+    } catch (error) {
+      setImportRows([]);
+      setImportErrors([error?.message || "Unable to parse file"]);
+      setIsImportDialogOpen(true);
+    }
+  };
+
+  const resetImportDialog = () => {
+    setIsImportDialogOpen(false);
+    setImportRows([]);
+    setImportErrors([]);
+    setSelectedFileName("");
+    setImportSummary(null);
+    setImporting(false);
+  };
+
+  const importProducts = async () => {
+    if (!importRows.length) return;
+    setImporting(true);
+    const summary = { success: 0, failed: 0, errors: [] };
+
+    for (let index = 0; index < importRows.length; index += 1) {
+      const row = importRows[index];
+      const payload = makeImportPayload(row);
+      const { ok, data, errors, statusText } = await createProduct(payload);
+
+      if (ok) {
+        setProducts((prev) => [
+          ...prev,
+          formatProductForDisplay({ ...data, sl: prev.length > 0 ? Math.max(...prev.map((item) => Number(item.sl) || 0)) + 1 : 1 }),
+        ]);
+        summary.success += 1;
+      } else {
+        summary.failed += 1;
+        const message = errors ? JSON.stringify(errors) : statusText || "Import failed";
+        summary.errors.push(`Row ${index + 2}: ${message}`);
+      }
+    }
+
+    setImportSummary(summary);
+    setImporting(false);
+  };
+
   // Load lookups
   const loadLookups = async () => {
     const [c, b, w] = await Promise.all([
@@ -59,6 +282,7 @@ export default function ProductsServices({ initialProducts = [] }) {
       productType: p?.product_type,
       salesPrice: p?.sales_price,
       costingPrice: p?.costing_price,
+      canEditCostingPrice: p?.can_edit_costing_price ?? true,
       taxPercent: p?.tax_percent,
       openingQuantity: p?.opening_quantity,
       batchNo: p?.batch_no,
@@ -125,8 +349,12 @@ export default function ProductsServices({ initialProducts = [] }) {
 
   const handleConfirmDelete = async () => {
     if (!productToDelete) return;
-    const { ok, statusText } = await deleteProduct(productToDelete.id);
-    if (!ok) return alert(`Delete failed: ${statusText || "error"}`);
+    const { ok, data, statusText } = await deleteProduct(productToDelete.id);
+    if (!ok) {
+      const message = data?.message || statusText || "Delete failed";
+      alert(message);
+      return;
+    }
     setProducts(prev => prev.filter(p => String(p.id) !== String(productToDelete.id)));
     setConfirmOpen(false);
     setProductToDelete(null);
@@ -177,14 +405,33 @@ export default function ProductsServices({ initialProducts = [] }) {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
           <Button type="button">Search</Button>
-          <Button type="button" variant="outline">
-            <FileDown size={16} className="mr-2" /> Import from Excel
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button type="button" variant="outline" className="flex items-center">
+                <FileDown size={16} className="mr-2" /> Import
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-card shadow-lg rounded-md border border-border">
+              <DropdownMenuItem onClick={() => fileInputRef.current?.click()} className="cursor-pointer">
+                Bulk upload
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={downloadImportTemplate} className="cursor-pointer">
+                Download template
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button type="button" onClick={() => handleOpenModal(null)}>
             <PlusCircle size={20} className="mr-2" /> Add New
           </Button>
         </div>
       </div>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".xlsx,.xls,.csv"
+        className="hidden"
+        onChange={handleProductImportFile}
+      />
 
       {/* Modal */}
       {isModalOpen && (
@@ -226,6 +473,117 @@ export default function ProductsServices({ initialProducts = [] }) {
         </div>
       )}
 
+      {isImportDialogOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 p-4 overflow-y-auto">
+          <div className="mx-auto w-full max-w-5xl overflow-hidden rounded-xl bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b px-5 py-4">
+              <div>
+                <h3 className="text-xl font-semibold">Import Products from Excel/CSV</h3>
+                <p className="text-sm text-slate-500">Upload a file using the template and then review parsed records before importing.</p>
+                {selectedFileName && <p className="text-sm text-slate-500">File: {selectedFileName}</p>}
+              </div>
+              <button
+                type="button"
+                className="rounded-full bg-slate-100 px-3 py-1 text-slate-700"
+                onClick={resetImportDialog}
+              >
+                Close
+              </button>
+            </div>
+            <div className="space-y-4 p-5">
+              {importErrors.length > 0 && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+                  <div className="font-semibold">Import errors</div>
+                  <ul className="list-disc pl-5 mt-2 space-y-1">
+                    {importErrors.map((error, index) => (
+                      <li key={index}>{error}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="grid gap-3 md:grid-cols-3">
+                <div className="rounded-lg border bg-slate-50 p-3 text-sm">
+                  <div className="font-semibold">Parsed rows</div>
+                  <div className="mt-2 text-lg">{importRows.length}</div>
+                </div>
+                <div className="rounded-lg border bg-slate-50 p-3 text-sm">
+                  <div className="font-semibold">Lookup fields</div>
+                  <div className="mt-2 text-slate-500">Category / Brand / Warehouse names are matched case-insensitively.</div>
+                </div>
+                <div className="rounded-lg border bg-slate-50 p-3 text-sm">
+                  <div className="font-semibold">Type</div>
+                  <div className="mt-2 text-slate-500">Supported values: Stock, Non-stock, Service, Combo</div>
+                </div>
+              </div>
+
+              {importRows.length > 0 && (
+                <div className="overflow-x-auto rounded-lg border">
+                  <table className="w-full min-w-[700px] text-left text-sm">
+                    <thead className="bg-slate-100 text-xs uppercase text-slate-700">
+                      <tr>
+                        <th className="px-3 py-2">Row</th>
+                        <th className="px-3 py-2">Name</th>
+                        <th className="px-3 py-2">Type</th>
+                        <th className="px-3 py-2">SKU</th>
+                        <th className="px-3 py-2">Category</th>
+                        <th className="px-3 py-2">Brand</th>
+                        <th className="px-3 py-2">Warehouse</th>
+                        <th className="px-3 py-2">Sales Price</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {importRows.slice(0, 20).map((row, index) => (
+                        <tr key={index} className="border-t hover:bg-slate-50">
+                          <td className="px-3 py-2 align-top">{index + 2}</td>
+                          <td className="px-3 py-2 align-top">{row["Name"] || "—"}</td>
+                          <td className="px-3 py-2 align-top">{row["Product Type"] || "Stock"}</td>
+                          <td className="px-3 py-2 align-top">{row["SKU"] || "—"}</td>
+                          <td className="px-3 py-2 align-top">{row["Category"] || "—"}</td>
+                          <td className="px-3 py-2 align-top">{row["Brand"] || "—"}</td>
+                          <td className="px-3 py-2 align-top">{row["Warehouse"] || "—"}</td>
+                          <td className="px-3 py-2 align-top">{row["Sales Price"] ?? "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-1 text-sm text-slate-600">
+                  <p>Import template is available as an Excel download. Use the template headers exactly.</p>
+                  <p className="text-xs">Only the first 20 rows are previewed here.</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" variant="secondary" onClick={() => fileInputRef.current?.click()}>
+                    Choose another file
+                  </Button>
+                  <Button type="button" onClick={importProducts} disabled={importing || importRows.length === 0}>
+                    {importing ? "Importing..." : "Import products"}
+                  </Button>
+                </div>
+              </div>
+
+              {importSummary && (
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm">
+                  <div className="font-semibold">Import summary</div>
+                  <p className="mt-2">Imported: {importSummary.success}</p>
+                  <p>Failed: {importSummary.failed}</p>
+                  {importSummary.errors.length > 0 && (
+                    <ul className="list-disc pl-5 mt-2 space-y-1">
+                      {importSummary.errors.map((error, idx) => (
+                        <li key={idx}>{error}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Table */}
       <div className="overflow-x-auto border rounded-lg max-h-[65vh] overflow-y-auto">
         <table className="w-full min-w-[900px] text-sm text-left">
@@ -245,6 +603,7 @@ export default function ProductsServices({ initialProducts = [] }) {
                   key={dataKey}
                   sortConfig={sortConfig}
                   requestSort={() => requestSort(dataKey)}
+                  isTextRight={["avgCost", "qty", "value"].includes(dataKey)}
                   className="w-16"
                 >
                   {label}
@@ -259,8 +618,8 @@ export default function ProductsServices({ initialProducts = [] }) {
                 <td className="px-4 py-3">{p?.sl}</td>
                 <td className="px-4 py-3 text-xs font-mono">{p?.id}</td>
                 <td className="px-4 py-3">{p?.name}</td>
-                <td className="px-4 py-3">{p?.product_type}</td>
-                <td className="px-4 py-3">{p?.base_unit_name}</td>
+                <td className="px-4 py-3">{p?.productType ?? p?.product_type}</td>
+                <td className="px-4 py-3">{p?.baseUnitName ?? p?.base_unit_name}</td>
                 <td className="px-4 py-3 text-right">{p?.avgCostFormatted ?? 0}</td>
                 <td className="px-4 py-3 text-right">{p?.qtyFormatted ?? 0}</td>
                 <td className="px-4 py-3 text-right">{p?.valueFormatted ?? 0}</td>

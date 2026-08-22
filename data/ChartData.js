@@ -16,8 +16,14 @@ export const chartData = [
         name: "Current Assets",
         details: "Short-term, liquid assets.",
         children: [
-          { name: "Cash in Hand", details: "Cash held at the company site." },
-          { name: "Cash at Bank", details: "Funds available in bank accounts." },
+          {
+            name: "Cash & Cash Equivalent",
+            details: "Cash and bank balances.",
+            children: [
+              { name: "Cash in Hand", details: "Cash held at the company site." },
+              { name: "Cash at Bank", details: "Funds available in bank accounts." },
+            ],
+          },
           { name: "Accounts Receivable", details: "Money owed by customers." },
         ],
       },

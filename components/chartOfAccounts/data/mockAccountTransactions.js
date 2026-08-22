@@ -1,5 +1,5 @@
 const mockAccountTransactions = [
-  // Cash & Bank
+  // Cash & Cash Equivalent
   { id: 'acc-cash-001', name: 'Cash in Hand', type: 'Asset', category: 'Cash', balance: 1500.75 },
   { id: 'acc-cash-002', name: 'Petty Cash', type: 'Asset', category: 'Cash', balance: 300.50 },
   { id: 'acc-bank-001', name: 'Main Bank Account (Checking)', type: 'Asset', category: 'Bank', balance: 12500.00 },

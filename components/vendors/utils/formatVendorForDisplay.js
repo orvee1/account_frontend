@@ -11,8 +11,8 @@ export default function formatVendorForDisplay(vendor) {
   const openingBalanceDate = vendor.openingBalanceDate ?? vendor.opening_balance_date ?? null;
   const vendorNumber = vendor.vendorNumber ?? vendor.vendor_number ?? null;
 
-  const currentBalance =
-    vendor.current_balance ?? vendor.balance ?? openingBalance ?? 0;
+  const currentBalance = vendor.current_balance ?? vendor.balance ?? null;
+  const normalizedBalance = Number(currentBalance ?? 0);
 
   return {
     ...vendor,
@@ -24,8 +24,8 @@ export default function formatVendorForDisplay(vendor) {
     openingBalance,
     openingBalanceDate,
     vendorNumber,
-    balance: Number(currentBalance || 0),
-    balanceFormatted: Number(currentBalance || 0).toLocaleString("en-US", {
+    balance: normalizedBalance,
+    balanceFormatted: normalizedBalance.toLocaleString("en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }),

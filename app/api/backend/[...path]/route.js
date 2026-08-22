@@ -30,6 +30,7 @@ async function handler(request, { params }) {
 
   const cookieStore = await cookies();
   const token = cookieStore.get(TOKEN_COOKIE)?.value;
+  const authorization = request.headers.get("authorization");
   const path = Array.isArray(params.path) ? params.path.join("/") : "";
   const url = new URL(`${normalizeApiBaseUrl(API_BASE_URL)}/${normalizeProxyPath(path)}`);
 
@@ -52,6 +53,8 @@ async function handler(request, { params }) {
 
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
+  } else if (authorization) {
+    headers.set("Authorization", authorization);
   }
 
   const init = {

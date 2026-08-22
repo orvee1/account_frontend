@@ -36,7 +36,6 @@ export default function PurchaseBillForm({ billId = null }) {
   const [settings, setSettings] = useState({
     purchase_show_price_uom: true,
     purchase_show_trade_discount: true,
-    purchase_show_line_discount: true,
     purchase_show_vat: true,
     purchase_show_ait: true,
     is_vat_registered: true,
@@ -61,8 +60,6 @@ export default function PurchaseBillForm({ billId = null }) {
             quantity: 1,
             unit_price: 0,
             trade_discount_pct: 0,
-            line_discount_pct: 0,
-            line_discount_amt: 0,
             vat_rate: 0,
             ait_rate: 0,
             // Helper fields for UI/Logic
@@ -237,8 +234,6 @@ export default function PurchaseBillForm({ billId = null }) {
             quantity: 1,
             unit_price: 0,
             trade_discount_pct: 0,
-            line_discount_pct: 0,
-            line_discount_amt: 0,
             vat_rate: 0,
             ait_rate: 0,
             purchaseUom: null,
@@ -374,7 +369,6 @@ export default function PurchaseBillForm({ billId = null }) {
                   {settings.purchase_show_price_uom && <th className="p-3 text-left text-sm font-semibold text-primary dark:text-dark-primary w-[8%]">Bill Unit</th>}
                   {settings.purchase_show_trade_discount && <th className="p-3 text-left text-sm font-semibold text-primary dark:text-dark-primary w-[6%]">Trade Disc %</th>}
                   <th className="p-3 text-left text-sm font-semibold text-primary dark:text-dark-primary w-[8%]">Net Rate</th>
-                  {settings.purchase_show_line_discount && <th className="p-3 text-left text-sm font-semibold text-primary dark:text-dark-primary w-[6%]">Line Disc %</th>}
                   <th className="p-3 text-left text-sm font-semibold text-primary dark:text-dark-primary w-[10%]">Subtotal</th>
                   {settings.purchase_show_vat && <th className="p-3 text-left text-sm font-semibold text-primary dark:text-dark-primary w-[6%]">VAT %</th>}
                   {settings.purchase_show_ait && <th className="p-3 text-left text-sm font-semibold text-primary dark:text-dark-primary w-[6%]">AIT %</th>}
@@ -423,11 +417,6 @@ export default function PurchaseBillForm({ billId = null }) {
                     <td className="p-2 text-right text-sm font-medium bg-muted/30 dark:bg-dark-muted/30">
                         {item.net_unit_price}
                     </td>
-                    {settings.purchase_show_line_discount && (
-                        <td className="p-2">
-                        <Input type="number" value={item.line_discount_pct} onChange={(e) => handleItemFieldChange(index, 'line_discount_pct', e.target.value)} placeholder="0" className="w-full text-sm text-right" min="0" max="100"/>
-                        </td>
-                    )}
                     <td className="p-2 text-right text-sm font-medium bg-muted/30 dark:bg-dark-muted/30">
                       {item.line_subtotal}
                     </td>
@@ -472,12 +461,6 @@ export default function PurchaseBillForm({ billId = null }) {
                 <div className="flex justify-between items-center text-sm">
                     <span className="font-medium">Trade Discount (-):</span>
                     <span className="font-semibold text-green-600 dark:text-green-400">-{Number(totals.totalTradeDiscount).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>
-                </div>
-              )}
-              {settings.purchase_show_line_discount && (
-                <div className="flex justify-between items-center text-sm">
-                    <span className="font-medium">Line Discount (-):</span>
-                    <span className="font-semibold text-green-600 dark:text-green-400">-{Number(totals.totalLineDiscount).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>
                 </div>
               )}
               

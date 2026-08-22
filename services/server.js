@@ -41,6 +41,7 @@ export function clientAuthRequestOptions({ headers } = { headers: {} }) {
 
   return {
     headers: authHeaders,
+    credentials: "include",
     redirect: "follow",
   };
 }

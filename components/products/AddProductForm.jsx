@@ -141,6 +141,7 @@ export default function AddProductForm({
       })),
 
       warehouse_id: d?.warehouse_id ?? null,
+      canEditCostingPrice: d?.canEditCostingPrice ?? d?.can_edit_costing_price ?? true,
     };
   }, [initialData, isEditMode]);
 
@@ -175,6 +176,7 @@ export default function AddProductForm({
   const [baseUnitName, setBaseUnitName] = useState(init.baseUnitName);
 
   const [warehouseId, setWarehouseId] = useState(init.warehouse_id);
+  const [canEditCostingPrice, setCanEditCostingPrice] = useState(init.canEditCostingPrice);
 
   const [serverErrors, setServerErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -337,7 +339,15 @@ export default function AddProductForm({
           </div>
           <div>
             <Label className="mb-1 block">Costing Price</Label>
-            <Input type="number" value={costingPrice} onChange={e => setCostingPrice(e.target.value)} />
+            <Input
+              type="number"
+              value={costingPrice}
+              onChange={e => setCostingPrice(e.target.value)}
+              disabled={!canEditCostingPrice}
+            />
+            {!canEditCostingPrice && isEditMode && (
+              <p className="mt-1 text-xs text-amber-600">This value is locked because the item has stock quantity, stock value, or transaction history.</p>
+            )}
           </div>
           <div>
             <Label className="mb-1 block">Base Sales Price</Label>
