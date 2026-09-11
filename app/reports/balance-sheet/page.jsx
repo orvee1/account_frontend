@@ -41,6 +41,7 @@ const EMPTY_BALANCE_SHEET = {
         commonStock: 0,
         retainedEarnings: 0,
         otherComprehensiveIncome: 0,
+        currentProfitLoss: 0,
     },
 };
 
@@ -238,14 +239,27 @@ function getBalanceSheetColumns(reportData) {
                     type: 'group',
                     title: 'Equity',
                     lines: [
-                        { label: 'Common Stock', amount: reportData.equity.commonStock },
-                        { label: 'Retained Earnings', amount: reportData.equity.retainedEarnings },
+                        {
+                            label: 'Common Stock',
+                            amount: reportData.equity.commonStock,
+                        },
+                        {
+                            label: 'Retained Earnings',
+                            amount: reportData.equity.retainedEarnings,
+                        },
                         {
                             label: 'Other Comprehensive Income',
                             amount: reportData.equity.otherComprehensiveIncome,
                         },
+                        {
+                            label: 'Current Profit / Loss',
+                            amount: reportData.equity.currentProfitLoss,
+                        },
                     ],
-                    total: { label: 'Total Equity', amount: reportData.totalEquity },
+                    total: {
+                        label: 'Total Equity',
+                        amount: reportData.totalEquity,
+                    },
                 },
                 {
                     type: 'summary',
