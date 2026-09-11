@@ -17,7 +17,7 @@ export const createSalesOrder = async (data) => {
     return response.data;
   } catch (error) {
     console.error('Error creating sales order:', error.message);
-    return { data: [] };
+    throw error;
   }
 };
 
@@ -47,7 +47,7 @@ export const updateSalesOrder = async (id, data) => {
     return response.data;
   } catch (error) {
     console.error('Error updating sales order:', error.message);
-    return { data: {} };
+    throw error;
   }
 };
 
@@ -57,7 +57,7 @@ export const deleteSalesOrder = async (id) => {
     return response.data;
   } catch (error) {
     console.error('Error deleting sales order:', error.message);
-    return { message: 'Error' };
+    throw error;
   }
 };
 
@@ -67,7 +67,7 @@ export const convertSalesOrderToInvoice = async (id) => {
     return response.data;
   } catch (error) {
     console.error('Error converting sales order:', error.message);
-    return { data: {} };
+    throw error;
   }
 };
 
@@ -78,7 +78,7 @@ export const createSalesInvoice = async (data) => {
     return response.data;
   } catch (error) {
     console.error('Error creating sales invoice:', error.message);
-    return { data: [] };
+    throw error;
   }
 };
 
@@ -108,7 +108,7 @@ export const updateSalesInvoice = async (id, data) => {
     return response.data;
   } catch (error) {
     console.error('Error updating sales invoice:', error.message);
-    return { data: {} };
+    throw error;
   }
 };
 
@@ -118,7 +118,7 @@ export const deleteSalesInvoice = async (id) => {
     return response.data;
   } catch (error) {
     console.error('Error deleting sales invoice:', error.message);
-    return { message: 'Error' };
+    throw error;
   }
 };
 
@@ -128,7 +128,7 @@ export const createSalesReturn = async (id, data) => {
     return response.data;
   } catch (error) {
     console.error('Error creating sales return:', error.message);
-    return { data: {} };
+    throw error;
   }
 };
 
@@ -138,18 +138,18 @@ export const recordSalesPayment = async (id, data) => {
     return response.data;
   } catch (error) {
     console.error('Error recording sales payment:', error.message);
-    return { data: {} };
+    throw error;
   }
 };
 
 // Sales Returns
-export const createSalesReturnDirect = async (data) => {
+export const createSalesReturnDirect = async (data, idempotencyKey) => {
   try {
-    const response = await axios.post(`${API_BASE}/sales-returns`, data, { headers: getAuthHeaders() });
+    const response = await axios.post(`${API_BASE}/sales-returns`, data, { headers: { ...getAuthHeaders(), ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}) } });
     return response.data;
   } catch (error) {
     console.error('Error creating sales return:', error.message);
-    return { data: {} };
+    throw error;
   }
 };
 
@@ -179,7 +179,7 @@ export const deleteSalesReturn = async (id) => {
     return response.data;
   } catch (error) {
     console.error('Error deleting sales return:', error.message);
-    return { message: 'Error' };
+    throw error;
   }
 };
 
@@ -190,7 +190,7 @@ export const createSalesPayment = async (data) => {
     return response.data;
   } catch (error) {
     console.error('Error creating sales payment:', error.message);
-    return { data: {} };
+    throw error;
   }
 };
 
@@ -220,6 +220,6 @@ export const deleteSalesPayment = async (id) => {
     return response.data;
   } catch (error) {
     console.error('Error deleting sales payment:', error.message);
-    return { message: 'Error' };
+    throw error;
   }
 };

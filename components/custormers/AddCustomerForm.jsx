@@ -1,5 +1,6 @@
 'use client';
 
+import { toDateInput } from "@/utils/accounting-date.mjs";
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,6 +37,8 @@ const AddCustomerForm = ({ onSave, onCancel, initialData, isEditMode }) => {
   const [openingBalanceDate, setOpeningBalanceDate] = useState(undefined);
   const [originalId, setOriginalId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   useEffect(() => {
     if (isEditMode && initialData) {
@@ -52,7 +55,7 @@ const AddCustomerForm = ({ onSave, onCancel, initialData, isEditMode }) => {
       setCreditLimit(initialData.creditLimit?.toString() || '');
       setOpeningBalance(initialData.openingBalance?.toString() || '');
       setOpeningBalanceType(initialData.openingBalanceType || '');
-      setOpeningBalanceDate(initialData.openingBalanceDate ? new Date(initialData.openingBalanceDate) : undefined);
+      setOpeningBalanceDate(initialData.openingBalanceDate ? toDateInput(initialData.openingBalanceDate) : '');
       setOriginalId(initialData.id || null);
       setIsEditing(true);
     } else {
@@ -80,8 +83,10 @@ const AddCustomerForm = ({ onSave, onCancel, initialData, isEditMode }) => {
     setOriginalId(null);
   };
 
-  const handleSubmit = (e, closeAfterSave = true) => {
+  const handleSubmit = async (e, closeAfterSave = true) => {
     e.preventDefault();
+    if (saving) return;
+    setSaveError('');
     if (!customerName) {
       toast({
         title: "Validation Error",
@@ -106,25 +111,30 @@ const AddCustomerForm = ({ onSave, onCancel, initialData, isEditMode }) => {
       creditLimit: parseFloat(creditLimit) || 0,
       openingBalance: parseFloat(openingBalance) || 0,
       openingBalanceType: openingBalanceType || null,
-      openingBalanceDate: openingBalanceDate ? openingBalanceDate.toISOString().split('T')[0] : null,
+      openingBalanceDate: openingBalanceDate || null,
     };
 
-    onSave(customerData, isEditMode);
+    setSaving(true);
+    try {
+      await onSave(customerData, isEditMode);
 
-    toast({
-      title: `Customer ${isEditMode ? 'Updated' : 'Saved'}!`,
-      description: `${customerName} has been successfully ${isEditMode ? 'updated' : 'added'}.`,
-    });
+      toast({
+        title: `Customer ${isEditMode ? 'Updated' : 'Saved'}!`,
+        description: `${customerName} has been successfully ${isEditMode ? 'updated' : 'added'}.`,
+      });
 
-    if (closeAfterSave) {
-      onCancel();
-    } else if (!isEditMode) {
-      resetForm();
-    }
+      if (closeAfterSave) {
+        onCancel();
+      } else if (!isEditMode) {
+        resetForm();
+      }
+    } catch (error) { setSaveError(error.message || 'Could not save customer.'); }
+    finally { setSaving(false); }
   };
 
   return (
     <form onSubmit={(e) => handleSubmit(e, true)} className="space-y-4 py-2">
+      {saveError && <p role="alert" className="text-red-600">{saveError}</p>}
       <DialogHeader className="hidden">
         <DialogTitle>{isEditMode ? 'Edit Customer' : 'Add New Customer'}</DialogTitle>
         <DialogDescription>
@@ -337,14 +347,14 @@ const AddCustomerForm = ({ onSave, onCancel, initialData, isEditMode }) => {
 
       <DialogFooter className="pt-6">
         <DialogClose asChild>
-          <Button variant="outline" onClick={onCancel}>Cancel</Button>
+          <Button type="button" variant="outline" disabled={saving} onClick={onCancel}>Cancel</Button>
         </DialogClose>
         {!isEditMode && (
-          <Button type="button" onClick={(e) => handleSubmit(e, false)} variant="secondary">
+          <Button type="button" disabled={saving} onClick={(e) => handleSubmit(e, false)} variant="secondary">
             <Save size={18} className="mr-2" /> Save & New
           </Button>
         )}
-        <Button type="submit">
+        <Button type="submit" disabled={saving}>
           <Save size={18} className="mr-2" /> {isEditMode ? 'Update Customer' : 'Save & Close'}
         </Button>
       </DialogFooter>

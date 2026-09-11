@@ -1,5 +1,7 @@
 'use client';
 
+import { toDateInput } from "@/utils/accounting-date.mjs";
+
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -9,8 +11,8 @@ import { fetchOwnersEquity } from '@/services/reports';
 export default function OwnerEquityPage() {
     const { user, loading } = useAuth();
     const [dateRange, setDateRange] = useState({
-        fromDate: new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0],
-        toDate: new Date().toISOString().split('T')[0],
+        fromDate: toDateInput(new Date(new Date().getFullYear(), 0, 1)),
+        toDate: toDateInput(),
     });
     const [isLoading, setIsLoading] = useState(true);
     const [reportData, setReportData] = useState(null);

@@ -164,6 +164,7 @@ export default function PurchaseBillsList({ initialBills = [] }) {
           >
             <PlusCircle size={20} className="mr-2" /> New Purchase Bill
           </Button>
+          <Button variant="outline" onClick={() => router.push("/purchases/returns")}>Purchase Returns</Button>
         </div>
       </div>
 

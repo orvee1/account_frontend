@@ -1,5 +1,7 @@
 // components/reports/ReconcilePage.jsx
 "use client";
+
+import { toDateInput } from "@/utils/accounting-date.mjs";
 import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, CheckCircle2, AlertCircle, Info } from "lucide-react";
@@ -11,7 +13,7 @@ export default function ReconcilePage({
   account,
   setShowReconcilePage,
 }) {
-  const today = new Date().toISOString().split("T")[0];
+  const today = toDateInput();
 
   const [endDate, setEndDate] = useState(today);
   const [transactions, setTransactions] = useState([]);

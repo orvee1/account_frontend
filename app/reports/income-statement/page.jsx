@@ -1,5 +1,7 @@
 'use client';
 
+import { toDateInput } from "@/utils/accounting-date.mjs";
+
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -9,8 +11,8 @@ import { fetchIncomeStatement } from '@/services/reports';
 export default function IncomeStatementPage() {
     const { user, loading } = useAuth();
     const [dateRange, setDateRange] = useState({
-        startDate: new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0],
-        endDate: new Date().toISOString().split('T')[0],
+        startDate: toDateInput(new Date(new Date().getFullYear(), 0, 1)),
+        endDate: toDateInput(),
     });
     const [isLoading, setIsLoading] = useState(true);
     const [reportData, setReportData] = useState(null);

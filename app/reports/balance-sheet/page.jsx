@@ -1,5 +1,7 @@
 'use client';
 
+import { toDateInput } from "@/utils/accounting-date.mjs";
+
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Download, Printer } from 'lucide-react';
@@ -453,7 +455,7 @@ function buildPrintableHtml(reportData, meta) {
 export default function BalanceSheetPage() {
     const { user, loading } = useAuth();
     const [dateRange, setDateRange] = useState({
-        asOfDate: new Date().toISOString().split('T')[0],
+        asOfDate: toDateInput(),
     });
     const [isLoading, setIsLoading] = useState(true);
     const [reportData, setReportData] = useState(null);

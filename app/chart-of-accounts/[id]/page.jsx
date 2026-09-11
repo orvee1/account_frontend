@@ -1,5 +1,7 @@
 // app/chart-of-accounts/[id]/page.jsx
 'use client'
+
+import { toDateInput } from "@/utils/accounting-date.mjs";
 import { useParams } from 'next/navigation'
 import { notFound } from "next/navigation";
 import { useEffect, useState } from 'react';
@@ -21,9 +23,9 @@ export default function AccountLedgerPage(promiseParams) {
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() - 30);
-    return d.toISOString().split('T')[0];
+    return toDateInput(d);
   });
-  const [endDate, setEndDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [endDate, setEndDate] = useState(() => toDateInput());
 
   const fetchLedgerData = async () => {
     try {

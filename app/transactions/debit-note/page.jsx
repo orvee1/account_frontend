@@ -1,5 +1,7 @@
 'use client';
 
+import { toDateInput } from "@/utils/accounting-date.mjs";
+
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -19,7 +21,7 @@ export default function DebitNotePage() {
     const [filter, setFilter] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [formData, setFormData] = useState({
-        date: new Date().toISOString().split('T')[0],
+        date: toDateInput(),
         debitNoteNumber: '',
         vendor: '',
         amount: '',
@@ -91,7 +93,7 @@ export default function DebitNotePage() {
 
     const resetForm = () => {
         setFormData({
-            date: new Date().toISOString().split('T')[0],
+            date: toDateInput(),
             debitNoteNumber: '',
             vendor: '',
             amount: '',

@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { toDateInput } from "@/utils/accounting-date.mjs";
+
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { createSalesReturnDirect, deleteSalesReturn, getSalesReturns } from "@/services/sales";
+import { createSalesReturnDirect, deleteSalesReturn, getSalesReturns, getSalesInvoices, getSalesInvoice } from "@/services/sales";
 import { fetchCustomersClient } from "@/services/customer";
 import { fetchProductsClient } from "@/services/product";
 
@@ -28,6 +30,11 @@ export default function SalesReturnsPage() {
   const [returns, setReturns] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
+  const [invoices, setInvoices] = useState([]);
+  const [invoiceItems, setInvoiceItems] = useState([]);
+  const [sourceLoading, setSourceLoading] = useState(false);
+  const sourceRequest = useRef(0);
+  const submission = useRef(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -40,7 +47,7 @@ export default function SalesReturnsPage() {
     return_no: "",
     customer_id: "",
     sales_invoice_id: "",
-    return_date: new Date().toISOString().split("T")[0],
+    return_date: toDateInput(),
     reason: "",
     notes: "",
     items: [EMPTY_ITEM()],
@@ -56,16 +63,18 @@ export default function SalesReturnsPage() {
     const load = async () => {
       try {
         setLoading(true);
-        const [returnsRes, customersRes, productsRes] = await Promise.all([
+        const [returnsRes, customersRes, productsRes, invoicesRes] = await Promise.all([
           getSalesReturns(),
           fetchCustomersClient({ per_page: 1000 }),
           fetchProductsClient({ per_page: 1000 }),
+          getSalesInvoices({ per_page: 1000 }),
         ]);
 
         if (!mounted) return;
         setReturns(toList(returnsRes));
         setCustomers(toList(customersRes));
         setProducts(toList(productsRes));
+        setInvoices(toList(invoicesRes));
       } catch (e) {
         if (mounted) setLoadError("Failed to load sales returns");
       } finally {
@@ -107,6 +116,29 @@ export default function SalesReturnsPage() {
     }));
   };
 
+  const selectInvoice = async (id) => {
+    const request = ++sourceRequest.current;
+    setForm(p => ({ ...p, sales_invoice_id: id, items: [EMPTY_ITEM()] }));
+    setInvoiceItems([]);
+    if (!id) return;
+    setSourceLoading(true);
+    try {
+      const response = await getSalesInvoice(id);
+      const invoice = response.data || response;
+      if (!invoice.id) throw new Error('Could not load source invoice.');
+      if (request === sourceRequest.current) setInvoiceItems(invoice.items || []);
+    } catch (error) { if (request === sourceRequest.current) setFormError(error.response?.data?.message || error.message); }
+    finally { if (request === sourceRequest.current) setSourceLoading(false); }
+  };
+
+  const selectInvoiceItem = (idx, id) => {
+    const source = invoiceItems.find(item => String(item.id) === id);
+    setForm(p => ({ ...p, items: p.items.map((item, i) => i !== idx ? item : source ? {
+      ...EMPTY_ITEM(), sales_invoice_item_id: source.id, product_id: source.product_id,
+      unit_price: Number(source.unit_price), quantity: 1,
+    } : EMPTY_ITEM()) }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError("");
@@ -116,7 +148,7 @@ export default function SalesReturnsPage() {
       return;
     }
     if (items.length === 0) {
-      setFormError("At least one item is required (with invoice item id).");
+      setFormError("Select a source invoice and at least one item.");
       return;
     }
 
@@ -139,20 +171,23 @@ export default function SalesReturnsPage() {
 
     try {
       setSaving(true);
-      await createSalesReturnDirect(payload);
+      const fingerprint = JSON.stringify(payload);
+      if (submission.current?.fingerprint !== fingerprint) submission.current = { fingerprint, key: crypto.randomUUID() };
+      await createSalesReturnDirect(payload, submission.current.key);
+      submission.current = null;
       await refreshReturns();
       setIsModalOpen(false);
       setForm({
         return_no: "",
         customer_id: "",
         sales_invoice_id: "",
-        return_date: new Date().toISOString().split("T")[0],
+        return_date: toDateInput(),
         reason: "",
         notes: "",
         items: [EMPTY_ITEM()],
       });
     } catch (e) {
-      setFormError("Failed to create sales return.");
+      setFormError(e.response?.data?.message || "Failed to create sales return.");
     } finally {
       setSaving(false);
     }
@@ -247,7 +282,7 @@ export default function SalesReturnsPage() {
               </button>
             </div>
 
-            {formError && <p className="text-sm text-red-600 mb-3">{formError}</p>}
+            {formError && <p role="alert" className="text-sm text-red-600 mb-3">{formError}</p>}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -256,7 +291,7 @@ export default function SalesReturnsPage() {
                   <select
                     className="w-full border rounded px-3 py-2"
                     value={form.customer_id}
-                    onChange={(e) => setForm((p) => ({ ...p, customer_id: e.target.value }))}
+                    onChange={(e) => { sourceRequest.current++; setSourceLoading(false); setInvoiceItems([]); setForm((p) => ({ ...p, customer_id: e.target.value, sales_invoice_id: "", items: [EMPTY_ITEM()] })); }}
                   >
                     <option value="">Select customer</option>
                     {customers.map((c) => (
@@ -282,14 +317,12 @@ export default function SalesReturnsPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Sales Invoice ID (optional)</label>
-                  <Input
-                    type="number"
-                    value={form.sales_invoice_id}
-                    onChange={(e) =>
-                      setForm((p) => ({ ...p, sales_invoice_id: e.target.value }))
-                    }
-                  />
+                  <label htmlFor="source-invoice" className="text-sm font-medium">Source Invoice</label>
+                  <select id="source-invoice" required className="w-full border rounded px-3 py-2" value={form.sales_invoice_id} onChange={e => selectInvoice(e.target.value)}>
+                    <option value="">Select invoice</option>
+                    {invoices.filter(invoice => String(invoice.customer_id) === String(form.customer_id)).map(invoice => <option key={invoice.id} value={invoice.id}>{invoice.invoice_no}</option>)}
+                  </select>
+                  {sourceLoading && <p>Loading invoice items...</p>}
                 </div>
                 <div className="md:col-span-2">
                   <label className="text-sm font-medium">Reason</label>
@@ -321,27 +354,11 @@ export default function SalesReturnsPage() {
 
                 {form.items.map((item, idx) => (
                   <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-2 border rounded p-3">
-                    <div className="md:col-span-2">
-                      <label className="text-xs font-medium">Invoice Item ID</label>
-                      <Input
-                        type="number"
-                        value={item.sales_invoice_item_id}
-                        onChange={(e) => updateItem(idx, "sales_invoice_item_id", e.target.value)}
-                      />
-                    </div>
-                    <div className="md:col-span-4">
-                      <label className="text-xs font-medium">Product</label>
-                      <select
-                        className="w-full border rounded px-2 py-1"
-                        value={item.product_id}
-                        onChange={(e) => updateItem(idx, "product_id", e.target.value)}
-                      >
-                        <option value="">Select product</option>
-                        {products.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name}
-                          </option>
-                        ))}
+                    <div className="md:col-span-6">
+                      <label htmlFor={`return-item-${idx}`} className="text-xs font-medium">Invoice Item</label>
+                      <select id={`return-item-${idx}`} required disabled={!form.sales_invoice_id || sourceLoading} className="w-full border rounded px-2 py-1" value={item.sales_invoice_item_id} onChange={e => selectInvoiceItem(idx, e.target.value)}>
+                        <option value="">Select invoiced item</option>
+                        {invoiceItems.map(source => <option key={source.id} value={source.id}>{source.product?.name || products.find(p => p.id === source.product_id)?.name} - invoiced quantity {source.quantity}</option>)}
                       </select>
                     </div>
                     <div className="md:col-span-2">
@@ -399,7 +416,7 @@ export default function SalesReturnsPage() {
                 <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={saving}>
+                <Button type="submit" disabled={saving || sourceLoading}>
                   {saving ? "Saving..." : "Save Return"}
                 </Button>
               </div>

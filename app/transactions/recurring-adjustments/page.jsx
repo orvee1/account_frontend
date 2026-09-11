@@ -1,5 +1,7 @@
 'use client';
 
+import { toDateInput } from "@/utils/accounting-date.mjs";
+
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -19,12 +21,12 @@ export default function RecurringAdjustmentsPage() {
     const [filter, setFilter] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [formData, setFormData] = useState({
-        date: new Date().toISOString().split('T')[0],
+        date: toDateInput(),
         number: '',
         description: '',
         type: 'recurring',
         frequency: 'monthly',
-        nextDate: new Date().toISOString().split('T')[0],
+        nextDate: toDateInput(),
         amount: '',
         debitAccount: '',
         creditAccount: '',
@@ -99,12 +101,12 @@ export default function RecurringAdjustmentsPage() {
 
     const resetForm = () => {
         setFormData({
-            date: new Date().toISOString().split('T')[0],
+            date: toDateInput(),
             number: '',
             description: '',
             type: 'recurring',
             frequency: 'monthly',
-            nextDate: new Date().toISOString().split('T')[0],
+            nextDate: toDateInput(),
             amount: '',
             debitAccount: '',
             creditAccount: '',

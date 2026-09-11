@@ -101,6 +101,11 @@ export const navItems = [
         path: "/purchases/new",
         permission: "view_purchase_bill",
       },
+      {
+        name: "Purchase Returns",
+        path: "/purchases/returns",
+        permission: "view_purchase_return",
+      },
     ],
   },
   {

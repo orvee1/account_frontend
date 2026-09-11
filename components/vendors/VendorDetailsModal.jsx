@@ -1,5 +1,7 @@
 // components/vendors/VendorDetailsModal.jsx
 "use client";
+
+import { toDateInput } from "@/utils/accounting-date.mjs";
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -23,8 +25,8 @@ export default function VendorDetailsModal({ isOpen, onClose, vendor }) {
             const today = new Date();
             const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-            setEndDate(today.toISOString().split("T")[0]);
-            setStartDate(sevenDaysAgo.toISOString().split("T")[0]);
+            setEndDate(toDateInput(today));
+            setStartDate(toDateInput(sevenDaysAgo));
         }
     }, [isOpen]);
 

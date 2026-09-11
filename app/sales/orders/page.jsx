@@ -1,5 +1,7 @@
 "use client";
 
+import { toDateInput } from "@/utils/accounting-date.mjs";
+
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,7 +41,7 @@ export default function SalesOrdersPage() {
   const [form, setForm] = useState({
     order_no: "",
     customer_id: "",
-    order_date: new Date().toISOString().split("T")[0],
+    order_date: toDateInput(),
     expected_delivery_date: "",
     notes: "",
     items: [EMPTY_ITEM()],
@@ -145,7 +147,7 @@ export default function SalesOrdersPage() {
       setForm({
         order_no: "",
         customer_id: "",
-        order_date: new Date().toISOString().split("T")[0],
+        order_date: toDateInput(),
         expected_delivery_date: "",
         notes: "",
         items: [EMPTY_ITEM()],

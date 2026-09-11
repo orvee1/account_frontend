@@ -1,5 +1,7 @@
 'use client';
 
+import { toDateInput } from "@/utils/accounting-date.mjs";
+
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -47,7 +49,7 @@ export default function InvoiceDetailPage() {
             await recordSalesPayment(params.id, {
                 amount: parseFloat(paymentAmount),
                 payment_method: paymentMethod,
-                payment_date: new Date().toISOString().split('T')[0],
+                payment_date: toDateInput(),
             });
             setPaymentAmount('');
             setPaymentMethod('');

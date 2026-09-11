@@ -1,5 +1,7 @@
 'use client';
 
+import { toDateInput } from "@/utils/accounting-date.mjs";
+
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -136,7 +138,7 @@ export default function PayrollRunPage() {
                         ? {
                             ...run,
                             status: 'Processed',
-                            processedDate: new Date().toISOString().split('T')[0],
+                            processedDate: toDateInput(),
                             processedBy: user?.name || 'Admin User',
                         }
                         : run

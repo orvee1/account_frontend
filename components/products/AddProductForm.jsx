@@ -33,6 +33,61 @@ const EMPTY_COMBO = () => ({
   uid: crypto.randomUUID(),
 });
 
+const isTruthyFlag = (value) => (
+  value === true ||
+  value === 1 ||
+  value === '1' ||
+  String(value).toLowerCase() === 'true'
+);
+
+const makeBaseProductUom = (salePrice = 0, overrides = {}) => ({
+  uid: overrides.uid ?? crypto.randomUUID(),
+  uom_id: overrides.uom_id ?? '',
+  name: overrides.name || 'Piece',
+  symbol: overrides.symbol ?? 'pcs',
+  conversion_factor: 1,
+  sale_price: Number(overrides.sale_price ?? salePrice ?? 0),
+  is_base_uom: true,
+  is_default_sale_uom: true,
+});
+
+const hasUsefulUomData = (uom) => (
+  Boolean(uom?.uom_id) ||
+  Boolean(String(uom?.name ?? '').trim()) ||
+  Boolean(String(uom?.symbol ?? '').trim())
+);
+
+const normalizeProductUoms = (uoms = [], fallbackSalePrice = 0) => {
+  const rows = (Array.isArray(uoms) ? uoms : [])
+    .filter(hasUsefulUomData)
+    .map((uom) => ({
+      ...uom,
+      uid: uom.uid ?? crypto.randomUUID(),
+      name: String(uom.name ?? '').trim(),
+      symbol: String(uom.symbol ?? '').trim(),
+      conversion_factor: Number(uom.conversion_factor || 0),
+      sale_price: Number(uom.sale_price ?? fallbackSalePrice ?? 0),
+      is_base_uom: isTruthyFlag(uom.is_base_uom),
+      is_default_sale_uom: isTruthyFlag(uom.is_default_sale_uom),
+    }));
+
+  if (rows.length === 0) {
+    return [makeBaseProductUom(fallbackSalePrice)];
+  }
+
+  const foundBaseIndex = rows.findIndex((uom) => uom.is_base_uom);
+  const baseIndex = foundBaseIndex >= 0 ? foundBaseIndex : 0;
+  const foundDefaultIndex = rows.findIndex((uom) => uom.is_default_sale_uom);
+  const defaultIndex = foundDefaultIndex >= 0 ? foundDefaultIndex : baseIndex;
+
+  return rows.map((uom, index) => ({
+    ...uom,
+    conversion_factor: index === baseIndex ? 1 : uom.conversion_factor,
+    is_base_uom: index === baseIndex,
+    is_default_sale_uom: index === defaultIndex,
+  }));
+};
+
 const Section = ({ title, hint, children }) => (
   <div className="rounded-xl border bg-white/80 shadow-sm backdrop-blur-sm p-4 md:p-5 space-y-4">
     <div className="flex items-start justify-between">
@@ -82,27 +137,17 @@ export default function AddProductForm({
 
     const productUomsIn = (d?.product_uoms ?? []).map(u => ({
       uid: crypto.randomUUID(),
-      uom_id: u.uom_id,
-      name: u.uom?.name ?? '',
-      symbol: u.uom?.symbol ?? '',
+      uom_id: u.uom_id ?? '',
+      name: u.uom?.name ?? u.name ?? '',
+      symbol: u.uom?.symbol ?? u.symbol ?? '',
       conversion_factor: u.conversion_factor,
       sale_price: u.sale_price,
-      is_base_uom: !!u.is_base_uom,
-      is_default_sale_uom: !!u.is_default_sale_uom,
+      is_base_uom: isTruthyFlag(u.is_base_uom),
+      is_default_sale_uom: isTruthyFlag(u.is_default_sale_uom),
     }));
 
-    if (!isEditMode && productUomsIn.length === 0) {
-      productUomsIn.push({
-        uid: crypto.randomUUID(),
-        uom_id: '',
-        name: 'Piece',
-        symbol: 'pcs',
-        conversion_factor: 1,
-        sale_price: Number(get('salesPrice', 'sales_price', 0)),
-        is_base_uom: true,
-        is_default_sale_uom: true,
-      });
-    }
+    const salesPriceValue = Number(get('salesPrice', 'sales_price', 0));
+    const normalizedProductUoms = normalizeProductUoms(productUomsIn, salesPriceValue);
 
     return {
       id: get('id', 'id', isEditMode ? undefined : `prod-${Date.now()}`),
@@ -118,7 +163,7 @@ export default function AddProductForm({
       brand_id: d?.brand_id ?? null,
 
       costingPrice: Number(get('costingPrice', 'costing_price', 0)),
-      salesPrice: Number(get('salesPrice', 'sales_price', 0)),
+      salesPrice: salesPriceValue,
 
       openingQuantity: Number(get('openingQuantity', 'opening_quantity', 0)),
       hasWarranty: !!(d?.has_warranty ?? false),
@@ -131,7 +176,7 @@ export default function AddProductForm({
       vat_inclusive: !!d?.vat_inclusive,
       ait_rate: d?.ait_rate ?? 0,
       base_uom_id: d?.base_uom_id ?? null,
-      product_uoms: productUomsIn,
+      product_uoms: normalizedProductUoms,
 
       comboItems: (d?.comboItems ?? d?.combo_items ?? []).map(ci => ({
         id: ci.id ?? ci.product_id ?? '',
@@ -189,6 +234,8 @@ export default function AddProductForm({
   }, [productType, comboItems.length]);
 
   const toApiPayload = () => {
+    const normalizedProductUoms = normalizeProductUoms(productUoms, salesPrice);
+
     return {
       id: init.id,
       product_type: productType,
@@ -204,7 +251,7 @@ export default function AddProductForm({
       vat_inclusive: vatInclusive ? 1 : 0,
       ait_rate: Number(aitRate || 0),
       base_uom_id: baseUomId ? Number(baseUomId) : null,
-      product_uoms: productUoms.map(u => ({
+      product_uoms: normalizedProductUoms.map(u => ({
         uom_id: u.uom_id || null,
         name: u.name,
         symbol: u.symbol,

@@ -1,5 +1,7 @@
 'use client';
 
+import { toDateInput } from "@/utils/accounting-date.mjs";
+
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -27,7 +29,7 @@ export default function SalarySetupPage() {
         providentFund: '',
         tax: '',
         otherDeduction: '',
-        effectiveDate: new Date().toISOString().split('T')[0],
+        effectiveDate: toDateInput(),
     });
 
     useEffect(() => {
@@ -123,7 +125,7 @@ export default function SalarySetupPage() {
             providentFund: '',
             tax: '',
             otherDeduction: '',
-            effectiveDate: new Date().toISOString().split('T')[0],
+            effectiveDate: toDateInput(),
         });
         setShowForm(false);
         setEditingId(null);

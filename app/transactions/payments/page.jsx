@@ -1,5 +1,7 @@
 'use client';
 
+import { toDateInput } from "@/utils/accounting-date.mjs";
+
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -15,11 +17,13 @@ export default function PaymentsPage() {
     const [payments, setPayments] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
+    const [formError, setFormError] = useState('');
+    const [saving, setSaving] = useState(false);
     const [editingId, setEditingId] = useState(null);
     const [filter, setFilter] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [formData, setFormData] = useState({
-        date: new Date().toISOString().split('T')[0],
+        date: toDateInput(),
         paymentNumber: '',
         vendor: '',
         bank: '',
@@ -46,7 +50,7 @@ export default function PaymentsPage() {
             const data = response.data?.data || response.data || [];
             const mapped = data.map((payment) => ({
                 id: payment.id,
-                date: payment.payment_date,
+                date: toDateInput(payment.payment_date || ""),
                 paymentNumber: payment.payment_number,
                 vendor: payment.vendor?.name || payment.vendor_name || '',
                 bank: payment.cheque_number || '',
@@ -78,23 +82,29 @@ export default function PaymentsPage() {
             payment_number: formData.paymentNumber || undefined,
         };
 
-        if (editingId) {
-            const response = await updatePayment(editingId, payload);
-            if (response.ok) {
-                await loadPayments();
+        setFormError('');
+        setSaving(true);
+        try {
+            const response = editingId
+                ? await updatePayment(editingId, payload)
+                : await createPayment(payload);
+            if (!response.ok) {
+                setFormError(response.data?.message || 'Unable to save payment. Please check the details.');
+                return;
             }
-        } else {
-            const response = await createPayment(payload);
-            if (response.ok) {
-                await loadPayments();
-            }
+            await loadPayments();
+            resetForm();
+        } catch (error) {
+            setFormError(error.response?.data?.message || 'Unable to save payment. Please try again.');
+        } finally {
+            setSaving(false);
         }
-        resetForm();
     };
 
     const resetForm = () => {
+        setFormError('');
         setFormData({
-            date: new Date().toISOString().split('T')[0],
+            date: toDateInput(),
             paymentNumber: '',
             vendor: '',
             bank: '',
@@ -297,6 +307,7 @@ export default function PaymentsPage() {
                                             {editingId ? 'Edit Payment' : 'New Payment'}
                                         </h2>
                                         <form onSubmit={handleSubmit}>
+                                            {formError && <p role="alert" className="mb-4 text-red-600">{formError}</p>}
                                             <div className="grid grid-cols-2 gap-4 mb-4">
                                                 <div>
                                                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -350,7 +361,6 @@ export default function PaymentsPage() {
                                                         onChange={(e) =>
                                                             setFormData({ ...formData, bank: e.target.value })
                                                         }
-                                                        required
                                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                                                     />
                                                 </div>
@@ -431,6 +441,7 @@ export default function PaymentsPage() {
                                             <div className="flex gap-3 mt-6">
                                                 <button
                                                     type="submit"
+                                                    disabled={saving}
                                                     className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                                                 >
                                                     {editingId ? 'Update' : 'Create'} Payment

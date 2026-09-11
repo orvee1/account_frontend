@@ -1,5 +1,7 @@
 'use client';
 
+import { toDateInput } from "@/utils/accounting-date.mjs";
+
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -9,7 +11,7 @@ import { fetchTrialBalance } from '@/services/reports';
 export default function TrialBalancePage() {
     const { user, loading } = useAuth();
     const [dateRange, setDateRange] = useState({
-        asOfDate: new Date().toISOString().split('T')[0],
+        asOfDate: toDateInput(),
     });
     const [isLoading, setIsLoading] = useState(true);
     const [reportData, setReportData] = useState(null);

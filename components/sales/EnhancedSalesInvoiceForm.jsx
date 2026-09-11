@@ -1,5 +1,7 @@
 'use client';
 
+import { toDateInput } from "@/utils/accounting-date.mjs";
+
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSalesCalculations } from '@/hooks/useSalesCalculations';
@@ -26,7 +28,7 @@ export default function EnhancedSalesInvoiceForm() {
 
     const [formData, setFormData] = useState({
         customer_id: '',
-        invoice_date: new Date().toISOString().split('T')[0],
+        invoice_date: toDateInput(),
         due_date: '',
         vat_mode: 'exclusive',
         invoice_discount_amt: 0,

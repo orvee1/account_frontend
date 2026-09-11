@@ -1,5 +1,7 @@
 'use client';
 
+import { toDateInput } from "@/utils/accounting-date.mjs";
+
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -18,11 +20,13 @@ export default function ReceiptsPage() {
     const [receipts, setReceipts] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
+    const [formError, setFormError] = useState('');
+    const [saving, setSaving] = useState(false);
     const [editingId, setEditingId] = useState(null);
     const [filter, setFilter] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [formData, setFormData] = useState({
-        date: new Date().toISOString().split('T')[0],
+        date: toDateInput(),
         receiptNumber: '',
         bank: '',
         amount: '',
@@ -61,7 +65,7 @@ export default function ReceiptsPage() {
             const data = response.data?.data || response.data || [];
             const mapped = data.map((receipt) => ({
                 id: receipt.id,
-                date: receipt.receipt_date,
+                date: toDateInput(receipt.receipt_date || ""),
                 receiptNumber: receipt.receipt_number,
                 bank: receipt.bank || '',
                 amount: Number(receipt.amount_received || 0),
@@ -92,23 +96,29 @@ export default function ReceiptsPage() {
             receipt_number: formData.receiptNumber || undefined,
         };
 
-        if (editingId) {
-            const response = await updateReceipt(editingId, payload);
-            if (response.ok) {
-                await loadReceipts();
+        setFormError('');
+        setSaving(true);
+        try {
+            const response = editingId
+                ? await updateReceipt(editingId, payload)
+                : await createReceipt(payload);
+            if (!response.ok) {
+                setFormError(response.data?.message || 'Unable to save receipt. Please check the details.');
+                return;
             }
-        } else {
-            const response = await createReceipt(payload);
-            if (response.ok) {
-                await loadReceipts();
-            }
+            await loadReceipts();
+            resetForm();
+        } catch (error) {
+            setFormError(error.response?.data?.message || 'Unable to save receipt. Please try again.');
+        } finally {
+            setSaving(false);
         }
-        resetForm();
     };
 
     const resetForm = () => {
+        setFormError('');
         setFormData({
-            date: new Date().toISOString().split('T')[0],
+            date: toDateInput(),
             receiptNumber: '',
             bank: '',
             amount: '',
@@ -311,6 +321,7 @@ export default function ReceiptsPage() {
                                             {editingId ? 'Edit Receipt' : 'New Receipt'}
                                         </h2>
                                         <form onSubmit={handleSubmit}>
+                                            {formError && <p role="alert" className="mb-4 text-red-600">{formError}</p>}
                                             <div className="grid grid-cols-2 gap-4 mb-4">
                                                 <div>
                                                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -364,7 +375,6 @@ export default function ReceiptsPage() {
                                                         onChange={(e) =>
                                                             setFormData({ ...formData, bank: e.target.value })
                                                         }
-                                                        required
                                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                                                     />
                                                 </div>
@@ -445,6 +455,7 @@ export default function ReceiptsPage() {
                                             <div className="flex gap-3 mt-6">
                                                 <button
                                                     type="submit"
+                                                    disabled={saving}
                                                     className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                                                 >
                                                     {editingId ? 'Update' : 'Create'} Receipt

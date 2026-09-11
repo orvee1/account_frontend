@@ -1,5 +1,7 @@
 "use client";
 
+import { toDateInput } from "@/utils/accounting-date.mjs";
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -44,8 +46,8 @@ export default function PurchaseBillForm({ billId = null }) {
   const [formData, setFormData] = useState({
     vendor_id: '',
     bill_no: `BILL-${String(Date.now()).slice(-6)}`,
-    bill_date: new Date().toISOString().split('T')[0],
-    due_date: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
+    bill_date: toDateInput(),
+    due_date: toDateInput(new Date(new Date().setDate(new Date().getDate() + 30))),
     supplier_ref_no: '',
     vat_mode: 'exclusive',
     bill_discount_amt: 0,
@@ -329,11 +331,11 @@ export default function PurchaseBillForm({ billId = null }) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="billDate" className="font-semibold">Bill Date</Label>
-              <DatePicker date={new Date(formData.bill_date)} setDate={(date) => setFormData({...formData, bill_date: date.toISOString().split('T')[0]})}/>
+              <DatePicker date={new Date(formData.bill_date)} setDate={(date) => setFormData({...formData, bill_date: toDateInput(date)})}/>
             </div>
             <div className="space-y-2">
               <Label htmlFor="dueDate" className="font-semibold">Due Date</Label>
-              <DatePicker date={formData.due_date ? new Date(formData.due_date) : null} setDate={(date) => setFormData({...formData, due_date: date ? date.toISOString().split('T')[0] : ''})}/>
+              <DatePicker date={formData.due_date ? new Date(formData.due_date) : null} setDate={(date) => setFormData({...formData, due_date: date ? toDateInput(date) : ''})}/>
             </div>
           </div>
 

@@ -12,6 +12,7 @@ const toPurchaseBillPayload = (data = {}) => ({
   due_date: data.due_date || null,
   supplier_ref_no: data.supplier_ref_no?.trim() || null,
   vat_mode: data.vat_mode || "exclusive",
+  status: data.status || "confirmed",
   bill_discount_amt: Number(data.bill_discount_amt) || 0,
   bill_discount_account_id: data.bill_discount_account_id || null,
   notes: data.notes?.trim() || "",

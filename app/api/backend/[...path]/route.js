@@ -31,7 +31,8 @@ async function handler(request, { params }) {
   const cookieStore = await cookies();
   const token = cookieStore.get(TOKEN_COOKIE)?.value;
   const authorization = request.headers.get("authorization");
-  const path = Array.isArray(params.path) ? params.path.join("/") : "";
+  const resolvedParams = await params;
+  const path = Array.isArray(resolvedParams.path) ? resolvedParams.path.join("/") : "";
   const url = new URL(`${normalizeApiBaseUrl(API_BASE_URL)}/${normalizeProxyPath(path)}`);
 
   const requestUrl = new URL(request.url);
@@ -41,11 +42,9 @@ async function handler(request, { params }) {
 
   const headers = new Headers();
   const contentType = request.headers.get("content-type");
-  const accept = request.headers.get("accept");
-
-  if (accept) {
-    headers.set("Accept", accept);
-  }
+  headers.set("Accept", "application/json");
+  const idempotencyKey = request.headers.get("idempotency-key");
+  if (idempotencyKey) headers.set("Idempotency-Key", idempotencyKey);
 
   if (contentType) {
     headers.set("Content-Type", contentType);

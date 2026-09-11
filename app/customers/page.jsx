@@ -180,13 +180,14 @@ export default function CustomersPage() {
       // তারপর একবার fresh fetch (fetchCustomers ভেতরে cache-bust আছে)
       await loadCustomers();
 
-      handleCloseModal();
+      return createdOrUpdated;
     } else {
       toast({
         title: isEdit ? "Update failed" : "Create failed",
         description: res.statusText || "Server error",
         variant: "destructive",
       });
+      throw new Error(res.data?.message || res.statusText || "Could not save customer.");
     }
   };
 
